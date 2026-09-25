@@ -69,7 +69,7 @@ class CargoController extends Controller
         $cargo = Cargo::findOrFail($id);
 
         $request->validate([
-            'nombre' => 'required|string|max:255|unique:cargos,nombre,' . $cargo->id,
+            'nombre' => 'sometimes|required|string|max:255|unique:cargos,nombre,' . $cargo->id,
             'descripcion' => 'nullable|string|max:500',
             'estado' => 'sometimes|in:activo,inactivo',
         ]);
