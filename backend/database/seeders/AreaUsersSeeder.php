@@ -6,6 +6,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Area;
+use App\Models\AreaUsuario;
+use App\Models\Cargo;
 
 class AreaUsersSeeder extends Seeder
 {
@@ -18,8 +20,10 @@ class AreaUsersSeeder extends Seeder
             return;
         }
 
+        $cargoInstitucional = Cargo::where('nombre', 'Área Institucional')->first();
         $areas = Area::all();
         $countUsers = 0;
+        $countAreaUsuarios = 0;
 
         foreach ($areas as $area) {
             $email = $area->correo;
@@ -30,7 +34,7 @@ class AreaUsersSeeder extends Seeder
             $user = User::where('email', $email)->first();
 
             if (!$user) {
-                User::create([
+                $user = User::create([
                     'nombres' => $area->nombre,
                     'apellidos' => '',
                     'name' => $area->nombre,
@@ -44,8 +48,27 @@ class AreaUsersSeeder extends Seeder
                 ]);
                 $countUsers++;
             }
+
+            $areaUsuario = AreaUsuario::where('area_id', $area->id)
+                ->where('usuario_id', $user->id)
+                ->first();
+
+            if (!$areaUsuario) {
+                AreaUsuario::create([
+                    'area_id' => $area->id,
+                    'usuario_id' => $user->id,
+                    'cargo' => 'Área Institucional',
+                    'cargo_id' => $cargoInstitucional?->id,
+                    'tipo_designacion' => 'titular',
+                    'activo' => true,
+                    'fecha_inicio' => now(),
+                    'estado_asignacion' => 'activo',
+                ]);
+                $countAreaUsuarios++;
+            }
         }
 
         $this->command->info("Se crearon {$countUsers} usuarios institucionales.");
+        $this->command->info("Se crearon {$countAreaUsuarios} asignaciones area-usuario.");
     }
 }

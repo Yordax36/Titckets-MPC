@@ -19,8 +19,11 @@ class DatabaseSeeder extends Seeder
             PermisoSeeder::class,
             RolPermisoSeeder::class,
             AreaSeeder::class,
+            CargoSeeder::class,
             AdminUserSeeder::class,
             AreaUsersSeeder::class,
+            TecnicoUsersSeeder::class,
+            TecnicoMissingSeeder::class,
             TipoBienSeeder::class,
         ]);
     }
