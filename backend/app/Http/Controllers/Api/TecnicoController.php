@@ -213,11 +213,6 @@ class TecnicoController extends Controller
 
     public function resetPassword($id): JsonResponse
     {
-        $rol = Auth::user()->rol;
-        if ($rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $tecnico = Tecnico::findOrFail($id);
 
         request()->validate([

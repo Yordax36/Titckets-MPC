@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { useEffect } from 'react'
 import Layout from '../components/layout/Layout'
 import ProtectedRoute from './ProtectedRoute'
+import PermissionRoute from './PermissionRoute'
 import LoginPage from '../pages/auth/LoginPage'
 import DashboardPage from '../pages/dashboard/DashboardPage'
 import TicketListPage from '../pages/tickets/TicketListPage'
@@ -39,18 +40,35 @@ export default function AppRouter() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/tickets" element={<TicketListPage />} />
           <Route path="/tickets/:id" element={<TicketDetailPage />} />
-          <Route path="/areas" element={<AreaListPage />} />
-          <Route path="/usuarios" element={<UsuarioListPage />} />
-          <Route path="/tecnicos" element={<TecnicosPage />} />
-          <Route path="/cargos" element={<CargosPage />} />
-          <Route path="/designaciones" element={<DesignacionesPage />} />
-          <Route path="/bienes" element={<BienesPage />} />
-          <Route path="/bienes/registrar" element={<RegistrarBienPage />} />
           <Route path="/bienes/mi-area" element={<AreaBienesPage />} />
           <Route path="/bienes/:id" element={<BienDetailPage />} />
-          <Route path="/auditoria" element={<AuditPage />} />
-          <Route path="/configuracion" element={<ConfiguracionPage />} />
           <Route path="/perfil-area" element={<PerfilAreaPage />} />
+
+          <Route element={<PermissionRoute permission="ver_usuarios" />}>
+            <Route path="/usuarios" element={<UsuarioListPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="ver_tecnicos" />}>
+            <Route path="/tecnicos" element={<TecnicosPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="ver_areas" />}>
+            <Route path="/areas" element={<AreaListPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="ver_cargos" />}>
+            <Route path="/cargos" element={<CargosPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="ver_designaciones" />}>
+            <Route path="/designaciones" element={<DesignacionesPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="ver_bienes" />}>
+            <Route path="/bienes" element={<BienesPage />} />
+            <Route path="/bienes/registrar" element={<RegistrarBienPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="ver_auditoria" />}>
+            <Route path="/auditoria" element={<AuditPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="configurar_sistema" />}>
+            <Route path="/configuracion" element={<ConfiguracionPage />} />
+          </Route>
         </Route>
       </Route>
 

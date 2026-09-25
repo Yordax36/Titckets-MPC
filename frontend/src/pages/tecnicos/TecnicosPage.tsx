@@ -3,8 +3,8 @@ import toast from 'react-hot-toast'
 import { getErrorMessage } from '../../api/axios'
 import {
   Search, Plus, Pencil, Trash2, Eye, EyeOff,
-  ChevronUp, ChevronDown, Headphones, UserCheck, UserX,
-  Ticket, ToggleLeft, ToggleRight, Clock, Calendar,
+  ChevronUp, ChevronDown, Headphones, UserCheck,
+  Ticket, ToggleLeft, ToggleRight, Clock,
   History, CheckCircle2, Loader2, Mail, Key,
 } from 'lucide-react'
 import { getTecnicos, createTecnico, updateTecnico, deleteTecnico, toggleTecnicoEstado, getTecnicosStats, getTecnicoHistorial, getTecnicoStatsDetalle, resetTecnicoPassword } from '../../api/tecnicoApi'

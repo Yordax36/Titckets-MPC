@@ -48,9 +48,6 @@ class UsuarioController extends Controller
     public function store(Request $request)
     {
         $authUser = Auth::user();
-        if ($authUser->rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
 
         $request->validate([
             'nombres' => 'required|string|max:255',
@@ -139,10 +136,6 @@ class UsuarioController extends Controller
     public function update(Request $request, $id)
     {
         $authUser = Auth::user();
-        if ($authUser->rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $usuario = User::findOrFail($id);
 
         $request->validate([
@@ -238,10 +231,6 @@ class UsuarioController extends Controller
     public function destroy(Request $request, $id)
     {
         $authUser = Auth::user();
-        if ($authUser->rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $usuario = User::findOrFail($id);
 
         if ($usuario->rol->nombre === 'Administrador') {
@@ -275,11 +264,6 @@ class UsuarioController extends Controller
 
     public function toggleEstado(Request $request, $id)
     {
-        $authUser = Auth::user();
-        if ($authUser->rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $usuario = User::findOrFail($id);
         $usuario->estado = $usuario->estado === 'activo' ? 'inactivo' : 'activo';
         $usuario->save();

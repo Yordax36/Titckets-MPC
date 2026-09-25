@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
 import { LayoutDashboard, Ticket, Users, Building2, Shield, Link2, Briefcase, Settings, UserCircle, X, HelpCircle, Headphones, Package } from 'lucide-react'
-import useAuth from '../../hooks/useAuth'
+import usePermission from '../../hooks/usePermission'
 import useUIStore from '../../store/uiStore'
 import { useSettings } from '../../hooks/useSettings'
 import HelpGuide from './HelpGuide'
@@ -13,8 +13,8 @@ const NavLinkItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: 
     className={({ isActive }) =>
       `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
         isActive
-          ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-          : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+          ? 'bg-purple-50 text-purple-700'
+          : 'text-gray-600 hover:bg-gray-100'
       }`
     }
   >
@@ -24,14 +24,10 @@ const NavLinkItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: 
 )
 
 export default function Sidebar() {
-  const { user } = useAuth()
+  const { hasPermission } = usePermission()
   const { sidebarOpen, toggleSidebar } = useUIStore()
   const { system_name, logo } = useSettings()
   const [guideOpen, setGuideOpen] = useState(false)
-
-  const isAdmin = user?.rol?.nombre === 'Administrador' || user?.rol_id === 1
-  const isTecnico = user?.rol?.nombre === 'Tecnico' || user?.rol_id === 2
-  const isAreaUser = user?.rol?.nombre === 'Area Usuaria' || user?.rol_id === 3
 
   return (
     <>
@@ -39,7 +35,7 @@ export default function Sidebar() {
         <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={toggleSidebar} />
       )}
 
-      <aside className={`fixed left-0 top-0 z-40 h-full w-64 bg-white border-r border-gray-200 transition-transform dark:bg-gray-900 dark:border-gray-700 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed left-0 top-0 z-40 h-full w-64 bg-white border-r border-gray-200 transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-2">
@@ -50,9 +46,9 @@ export default function Sidebar() {
                   <Ticket className="h-4 w-4 text-white" />
                 </div>
               )}
-              <span className="text-base font-bold text-gray-900 dark:text-white">{system_name || 'MPC Service Desk'}</span>
+              <span className="text-base font-bold text-gray-900">{system_name || 'MPC Service Desk'}</span>
             </div>
-            <button onClick={toggleSidebar} className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400">
+            <button onClick={toggleSidebar} className="lg:hidden text-gray-500 hover:text-gray-700">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -60,56 +56,62 @@ export default function Sidebar() {
           <nav className="flex-1 space-y-0.5 px-3 py-2 overflow-y-auto">
             <NavLinkItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
-            {/* Administrador */}
-            {isAdmin && (
+            {/* Mesa de Ayuda */}
+            {hasPermission('ver_todos_los_tickets') || hasPermission('ver_tickets_asignados') || hasPermission('ver_mis_tickets') ? (
               <>
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Mesa de Ayuda</p>
+                <div className="my-2 border-t border-gray-200" />
+                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400">Mesa de Ayuda</p>
                 <NavLinkItem to="/tickets" icon={Ticket} label="Tickets" />
-                <NavLinkItem to="/tecnicos" icon={Headphones} label="Técnicos" />
+              </>
+            ) : null}
 
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Gestión Institucional</p>
-                <NavLinkItem to="/areas" icon={Building2} label="Áreas" />
-                <NavLinkItem to="/usuarios" icon={Users} label="Personal" />
-                <NavLinkItem to="/cargos" icon={Briefcase} label="Cargos" />
-                <NavLinkItem to="/designaciones" icon={Link2} label="Designaciones" />
-                <NavLinkItem to="/bienes" icon={Package} label="Bienes" />
+            {hasPermission('ver_tecnicos') && (
+              <NavLinkItem to="/tecnicos" icon={Headphones} label="Técnicos" />
+            )}
 
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Administración</p>
-                <NavLinkItem to="/auditoria" icon={Shield} label="Auditoría" />
-                <NavLinkItem to="/configuracion" icon={Settings} label="Configuración" />
+            {/* Gestion Institucional */}
+            {(hasPermission('ver_areas') || hasPermission('ver_usuarios') || hasPermission('ver_cargos') || hasPermission('ver_designaciones') || hasPermission('ver_bienes')) && (
+              <>
+                <div className="my-2 border-t border-gray-200" />
+                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400">Gestión Institucional</p>
+                {hasPermission('ver_areas') && <NavLinkItem to="/areas" icon={Building2} label="Áreas" />}
+                {hasPermission('ver_usuarios') && <NavLinkItem to="/usuarios" icon={Users} label="Personal" />}
+                {hasPermission('ver_cargos') && <NavLinkItem to="/cargos" icon={Briefcase} label="Cargos" />}
+                {hasPermission('ver_designaciones') && <NavLinkItem to="/designaciones" icon={Link2} label="Designaciones" />}
+                {hasPermission('ver_bienes') && <NavLinkItem to="/bienes" icon={Package} label="Bienes" />}
               </>
             )}
 
-            {/* Técnico */}
-            {isTecnico && (
+            {/* Bienes area for non-admin users */}
+            {!hasPermission('ver_areas') && hasPermission('ver_bienes') && (
               <>
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Mesa de Ayuda</p>
-                <NavLinkItem to="/tickets" icon={Ticket} label="Mis Tickets" />
-                <NavLinkItem to="/bienes" icon={Package} label="Bienes" />
-                <NavLinkItem to="/perfil-area" icon={UserCircle} label="Mi Perfil" />
-              </>
-            )}
-
-            {/* Área Usuaria */}
-            {isAreaUser && (
-              <>
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Mesa de Ayuda</p>
-                <NavLinkItem to="/tickets" icon={Ticket} label="Tickets" />
+                <div className="my-2 border-t border-gray-200" />
+                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400">Bienes</p>
                 <NavLinkItem to="/bienes/mi-area" icon={Package} label="Bienes" />
+              </>
+            )}
 
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Mi Área</p>
+            {/* Administracion */}
+            {(hasPermission('ver_auditoria') || hasPermission('configurar_sistema')) && (
+              <>
+                <div className="my-2 border-t border-gray-200" />
+                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400">Administración</p>
+                {hasPermission('ver_auditoria') && <NavLinkItem to="/auditoria" icon={Shield} label="Auditoría" />}
+                {hasPermission('configurar_sistema') && <NavLinkItem to="/configuracion" icon={Settings} label="Configuración" />}
+              </>
+            )}
+
+            {/* Perfil Area - for area users and technicians */}
+            {hasPermission('ver_perfil_area') && (
+              <>
+                <div className="my-2 border-t border-gray-200" />
+                <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400">Mi Área</p>
                 <NavLinkItem to="/perfil-area" icon={UserCircle} label="Perfil del Área" />
               </>
             )}
           </nav>
 
-          <div className="p-3 border-t border-gray-100 dark:border-gray-700">
+          <div className="p-3 border-t border-gray-100">
             <div className="rounded-xl bg-purple-50 border border-purple-100 p-3 flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                 <HelpCircle className="h-4 w-4 text-purple-600" />

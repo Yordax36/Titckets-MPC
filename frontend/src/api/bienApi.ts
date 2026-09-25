@@ -54,6 +54,7 @@ export interface Bien {
   mantenimientos?: Mantenimiento[];
   historial?: BienHistorial[];
   created_at: string;
+  updated_at: string;
 }
 
 export interface BienStats {

@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Search, Loader2, Eye, AlertTriangle, Package, Building2, User, Calendar,
   MapPin, Tag, Hash, Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi,
-  ChevronLeft, ChevronRight, X, Info, Clock, CircleCheck, Wrench, XCircle,
-  FileText, Shield, Cpu, HardDrive, MemoryStick, Globe, Network, Zap,
-  Palette, Layers, Disc,
+  ChevronLeft, ChevronRight, X, Info, Clock, CircleCheck, Wrench,
+  FileText, Cpu, HardDrive, MemoryStick, Globe, Network,
+  Palette, Layers,
 } from 'lucide-react';
 import type { Bien, TipoBien, BienStats } from '../../api/bienApi';
 import { getBienes, getBienStats, getTiposBienes } from '../../api/bienApi';
@@ -51,7 +51,7 @@ export default function AreaBienesPage() {
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [drawerBien, setDrawerBien] = useState<Bien | null>(null);
-  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [, setDrawerLoading] = useState(false);
 
   useEffect(() => {
     loadData();

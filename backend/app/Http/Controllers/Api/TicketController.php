@@ -334,10 +334,6 @@ class TicketController extends Controller
 
     public function asignarTecnico(Request $request, $id): JsonResponse
     {
-        if (!$request->user()->rol || $request->user()->rol->nombre !== 'Administrador') {
-            abort(403, 'No autorizado');
-        }
-
         $ticket = Ticket::findOrFail($id);
 
         $request->validate([

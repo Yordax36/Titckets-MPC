@@ -26,11 +26,12 @@ interface CreateTicketModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (data: { titulo: string; descripcion: string; categoria: string; incidencia: string; area_id?: number; files: File[] }) => Promise<void>
-  userRole?: string
+  canSelectArea?: boolean
+  isAreaUser?: boolean
   userAreaId?: number
 }
 
-export default function CreateTicketModal({ isOpen, onClose, onSubmit, userRole, userAreaId }: CreateTicketModalProps) {
+export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelectArea, isAreaUser, userAreaId }: CreateTicketModalProps) {
   const [step, setStep] = useState(1)
   const [selectedCategoria, setSelectedCategoria] = useState<CategoriaIncidencia | null>(null)
   const [selectedIncidencia, setSelectedIncidencia] = useState('')
@@ -46,8 +47,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, userRole,
   const [areasLoading, setAreasLoading] = useState(false)
   const [areasSearch, setAreasSearch] = useState('')
 
-  const needsAreaSelection = userRole === 'Tecnico' || userRole === 'Administrador'
-  const isAreaUser = userRole === 'Area Usuaria'
+  const needsAreaSelection = canSelectArea
 
   useEffect(() => {
     if (isOpen && needsAreaSelection) {
@@ -189,10 +189,6 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, userRole,
   const stepLabels = needsAreaSelection
     ? ['Categoría', 'Área', 'Incidencia', 'Detalle']
     : ['Categoría', 'Incidencia', 'Detalle']
-
-  const currentStepForIndicator = needsAreaSelection
-    ? step
-    : step === 3 ? 4 : step
 
   return (
     <Modal

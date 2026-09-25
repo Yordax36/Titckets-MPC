@@ -1,14 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import useAuth from '../hooks/useAuth'
+import usePermission from '../hooks/usePermission'
 
 interface PermissionRouteProps {
   permission: string
 }
 
 export default function PermissionRoute({ permission }: PermissionRouteProps) {
-  const { hasPermission, isLoading } = useAuth()
-
-  if (isLoading) return null
+  const { hasPermission } = usePermission()
 
   if (!hasPermission(permission)) {
     return <Navigate to="/" replace />

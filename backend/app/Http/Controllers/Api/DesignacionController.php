@@ -37,11 +37,6 @@ class DesignacionController extends Controller
 
     public function store(Request $request)
     {
-        $rol = Auth::user()->rol;
-        if ($rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $request->validate([
             'area_id' => 'required|exists:areas,id',
             'usuario_id' => 'required|exists:users,id',
@@ -116,11 +111,6 @@ class DesignacionController extends Controller
 
     public function update(Request $request, $id)
     {
-        $rol = Auth::user()->rol;
-        if ($rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $designacion = AreaUsuario::with(['area', 'usuario', 'cargoRelacion'])->findOrFail($id);
 
         if ($designacion->estado_asignacion !== 'activo') {
@@ -165,11 +155,6 @@ class DesignacionController extends Controller
 
     public function finalizar(Request $request, $id)
     {
-        $rol = Auth::user()->rol;
-        if ($rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $designacion = AreaUsuario::with(['area', 'usuario'])->findOrFail($id);
 
         if ($designacion->estado_asignacion !== 'activo') {

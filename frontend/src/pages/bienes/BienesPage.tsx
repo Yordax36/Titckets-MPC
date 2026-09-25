@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import {
   Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi, Package, Plus,
   Search, Loader2, Eye, Pencil, Wrench, Clock, ChevronDown, ChevronRight,
-  Building2, User, MapPin, Hash, Tag, Calendar, AlertTriangle, FileText,
-  Download, Printer as PrinterIcon, SlidersHorizontal, X, Landmark, Briefcase,
+  Building2, User, MapPin, Hash, Tag, AlertTriangle, FileText,
+  Download, Printer as PrinterIcon, X, Landmark, Briefcase,
   Globe, Shield, Zap, Users, CircleCheck, XCircle,
 } from 'lucide-react';
 import type { Bien, TipoBien, BienStats } from '../../api/bienApi';
 import { getBienes, getBienStats, getTiposBienes, getBienesPorArea } from '../../api/bienApi';
-import useAuth from '../../hooks/useAuth';
+import usePermission from '../../hooks/usePermission';
+import { PERMISOS } from '../../utils/permissions';
 import toast from 'react-hot-toast';
-import { getErrorMessage } from '../../api/axios';
 
 /* ─── Config ─── */
 
@@ -50,14 +50,12 @@ interface AreaData {
 
 export default function BienesPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isAdmin = user?.rol?.nombre === 'Administrador';
-  const isTecnico = user?.rol?.nombre === 'Tecnico';
-  const canManage = isAdmin || isTecnico;
+  const { hasPermission } = usePermission();
+  const canManage = hasPermission(PERMISOS.EDITAR_BIEN) || hasPermission(PERMISOS.GESTIONAR_BIENES);
 
   const [areas, setAreas] = useState<AreaData[]>([]);
   const [stats, setStats] = useState<BienStats | null>(null);
-  const [tipos, setTipos] = useState<TipoBien[]>([]);
+  const [_tipos, setTipos] = useState<TipoBien[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');

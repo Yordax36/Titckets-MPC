@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, ChevronLeft, ChevronRight, LayoutDashboard, Ticket, Users, Building2, Package, Settings, Headphones, Link2, Briefcase, Shield, HelpCircle } from 'lucide-react'
-import useAuth from '../../hooks/useAuth'
+import usePermission from '../../hooks/usePermission'
+import { PERMISOS } from '../../utils/permissions'
 
 interface Step {
   icon: any
@@ -11,11 +12,8 @@ interface Step {
 }
 
 export default function HelpGuide({ onClose }: { onClose: () => void }) {
-  const { user } = useAuth()
+  const { hasPermission } = usePermission()
   const [step, setStep] = useState(0)
-
-  const isAdmin = user?.rol?.nombre === 'Administrador' || user?.rol_id === 1
-  const isTecnico = user?.rol?.nombre === 'Tecnico' || user?.rol_id === 2
 
   const steps: Step[] = [
     {
@@ -42,7 +40,7 @@ export default function HelpGuide({ onClose }: { onClose: () => void }) {
       ],
       color: 'bg-purple-100 text-purple-600',
     },
-    ...(isAdmin ? [
+    ...(hasPermission(PERMISOS.VER_TECNICOS) ? [
       {
         icon: Headphones,
         title: 'Técnicos',
@@ -55,6 +53,8 @@ export default function HelpGuide({ onClose }: { onClose: () => void }) {
         ],
         color: 'bg-green-100 text-green-600',
       },
+    ] : []),
+    ...(hasPermission(PERMISOS.VER_AREAS) ? [
       {
         icon: Building2,
         title: 'Áreas',
@@ -101,6 +101,8 @@ export default function HelpGuide({ onClose }: { onClose: () => void }) {
         ],
         color: 'bg-teal-100 text-teal-600',
       },
+    ] : []),
+    ...(hasPermission(PERMISOS.VER_BIENES) ? [
       {
         icon: Package,
         title: 'Bienes',
@@ -113,6 +115,8 @@ export default function HelpGuide({ onClose }: { onClose: () => void }) {
         ],
         color: 'bg-cyan-100 text-cyan-600',
       },
+    ] : []),
+    ...(hasPermission(PERMISOS.VER_AUDITORIA) ? [
       {
         icon: Shield,
         title: 'Auditoría',
@@ -125,6 +129,8 @@ export default function HelpGuide({ onClose }: { onClose: () => void }) {
         ],
         color: 'bg-orange-100 text-orange-600',
       },
+    ] : []),
+    ...(hasPermission(PERMISOS.CONFIGURAR_SISTEMA) ? [
       {
         icon: Settings,
         title: 'Configuración',
@@ -135,19 +141,6 @@ export default function HelpGuide({ onClose }: { onClose: () => void }) {
           'Solo los administradores pueden acceder',
         ],
         color: 'bg-gray-100 text-gray-600',
-      },
-    ] : []),
-    ...(isTecnico ? [
-      {
-        icon: Package,
-        title: 'Bienes',
-        description: 'Consulta y registra mantenimientos.',
-        details: [
-          'Visualiza los bienes asignados',
-          'Registra mantenimientos realizados',
-          'Cambia el estado de los bienes',
-        ],
-        color: 'bg-cyan-100 text-cyan-600',
       },
     ] : []),
     {

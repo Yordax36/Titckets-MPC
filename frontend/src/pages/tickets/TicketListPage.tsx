@@ -24,11 +24,14 @@ import {
 } from '../../utils/constants'
 import { formatDate, formatElapsed } from '../../utils/formatters'
 import useAuth from '../../hooks/useAuth'
+import usePermission from '../../hooks/usePermission'
+import { PERMISOS } from '../../utils/permissions'
 
 type SortField = 'numero' | 'created_at' | 'estado' | 'titulo'
 
 export default function TicketListPage() {
   const { user } = useAuth()
+  const { hasPermission } = usePermission()
   const [tickets, setTickets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -54,7 +57,7 @@ export default function TicketListPage() {
 
   // Create modal
   const [showCreate, setShowCreate] = useState(false)
-  const [creating, setCreating] = useState(false)
+  const [_creating, setCreating] = useState(false)
   const [areas, setAreas] = useState<any[]>([])
 
   // Detail drawer
@@ -399,8 +402,9 @@ export default function TicketListPage() {
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
         onSubmit={handleCreateSubmit}
-        userRole={user?.rol?.nombre}
-        userAreaId={user?.area_id || user?.area?.id}
+        canSelectArea={hasPermission(PERMISOS.ASIGNAR_TECNICO)}
+        isAreaUser={user?.rol?.nombre === 'Area Usuaria'}
+        userAreaId={(user as any)?.area_id || (user as any)?.area?.id}
       />
 
       {/* Detail Drawer */}

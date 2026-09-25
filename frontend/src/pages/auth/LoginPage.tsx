@@ -25,7 +25,7 @@ export default function LoginPage() {
     try {
       const response = await login(email, password)
       const token = response.data.token
-      await auth.login(token)
+      await auth.login(token, rememberMe)
       toast.success('Bienvenido')
       navigate('/')
     } catch (err) {

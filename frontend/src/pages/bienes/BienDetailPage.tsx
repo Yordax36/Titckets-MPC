@@ -9,7 +9,8 @@ import type { Bien, Mantenimiento, BienHistorial } from '../../api/bienApi';
 import { getBien, getBienHistorial, getMantenimientos, createMantenimiento, cambiarEstadoBien } from '../../api/bienApi';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../api/axios';
-import useAuth from '../../hooks/useAuth';
+import usePermission from '../../hooks/usePermission';
+import { PERMISOS } from '../../utils/permissions';
 import Modal from '../../components/ui/Modal';
 
 const TIPO_ICONOS: Record<string, any> = {
@@ -33,10 +34,9 @@ const EVENTO_COLORS: Record<string, string> = {
 export default function BienDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isAdmin = user?.rol?.nombre === 'Administrador';
-  const isTecnico = user?.rol?.nombre === 'Tecnico';
-  const canManage = isAdmin || isTecnico;
+  const { hasPermission } = usePermission();
+  const canManage = hasPermission(PERMISOS.EDITAR_BIEN) || hasPermission(PERMISOS.GESTIONAR_BIENES);
+  const canDelete = hasPermission(PERMISOS.ELIMINAR_BIEN);
   const [bien, setBien] = useState<Bien | null>(null);
   const [responsable, setResponsable] = useState<any>(null);
   const [historial, setHistorial] = useState<BienHistorial[]>([]);
@@ -144,7 +144,7 @@ export default function BienDetailPage() {
               <Pencil className="h-4 w-4" /> Editar Bien
             </button>
           )}
-          {isAdmin && (
+          {canDelete && (
             <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
               <MoreVertical className="h-4 w-4" /> Más acciones
             </button>
@@ -317,7 +317,7 @@ export default function BienDetailPage() {
                         className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                         <Wrench className="h-4 w-4" /> Registrar Mantenimiento
                       </button>
-                      {isAdmin && (
+                      {canDelete && (
                         <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                           <Trash2 className="h-4 w-4" /> Dar de Baja
                         </button>

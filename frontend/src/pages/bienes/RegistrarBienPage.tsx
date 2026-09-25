@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi, Package, Plus,
-  Search, Loader2, ArrowLeft, ArrowRight, Check, CircleCheck, Eye,
-  Cpu, HardDrive, MemoryStick, Globe, Network, Shield, Zap, Palette,
-  Layers, Disc, MapPin, Tag, Hash, User, Users, Building2, XCircle, Info,
+  Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi, Package,
+  Search, Loader2, ArrowLeft, ArrowRight, Check, Eye,
+  Cpu, MemoryStick, Globe, Network, Shield, Zap, Palette,
+  Layers, Disc, MapPin, Tag, Hash, User, Users, Building2, Info,
   Landmark, Briefcase, FileText,
 } from 'lucide-react';
 import type { TipoBien, BienStats } from '../../api/bienApi';
-import { getBienes, createBien, getTiposBienes, getBienStats } from '../../api/bienApi';
+import { createBien, getTiposBienes, getBienStats } from '../../api/bienApi';
 import { getAreas } from '../../api/areaApi';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../api/axios';
@@ -364,7 +364,7 @@ export default function RegistrarBienPage() {
   const [step, setStep] = useState(0);
   const [tipos, setTipos] = useState<TipoBien[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
-  const [stats, setStats] = useState<BienStats | null>(null);
+  const [_stats, setStats] = useState<BienStats | null>(null);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [areaSearch, setAreaSearch] = useState('');

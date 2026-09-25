@@ -6,12 +6,14 @@ import { getRespuestas, createRespuesta } from '../../api/respuestaApi'
 import { getAllTecnicos } from '../../api/tecnicoApi'
 import { ESTADOS_TICKET, CATEGORIAS, ESTADO_DOT_COLOR } from '../../utils/constants'
 import TicketTimeline from './TicketTimeline'
-import { formatDateTime, formatTimeAgo, formatFileSize } from '../../utils/formatters'
+import { formatDateTime, formatFileSize } from '../../utils/formatters'
+import usePermission from '../../hooks/usePermission'
+import { PERMISOS } from '../../utils/permissions'
 import {
   X, Maximize2, Minimize2, UserPlus, RefreshCw, MoreHorizontal,
-  Building2, User, Mail, Shield, Tag, Calendar, Clock, FileText,
-  Image as ImageIcon, Download, Send, Paperclip, MessageSquare,
-  Upload, Trash2, Loader2, ChevronRight, Eye, AlertCircle,
+  Building2, User, Shield, Tag, Calendar, Clock, FileText,
+  Download, Send, Paperclip, MessageSquare,
+  Upload, Trash2, Loader2, Eye, AlertCircle,
 } from 'lucide-react'
 
 interface TicketDrawerProps {
@@ -33,6 +35,7 @@ const tabsConfig: { id: TabId; label: string; icon: any; adminOnly?: boolean }[]
 ]
 
 export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId, onRefresh }: TicketDrawerProps) {
+  const { hasPermission } = usePermission()
   const [ticket, setTicket] = useState<any>(null)
   const [respuestas, setRespuestas] = useState<any[]>([])
   const [historialData, setHistorialData] = useState<any[]>([])
@@ -47,7 +50,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
 
   const [newComment, setNewComment] = useState('')
   const [sendingComment, setSendingComment] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [, setUploading] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -284,7 +287,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
 
               {/* Tabs */}
               <div className="flex items-center gap-0 px-6 border-b border-gray-100 flex-shrink-0">
-                {tabsConfig.filter(t => !t.adminOnly).map((tab) => {
+                {tabsConfig.filter(t => !t.adminOnly || hasPermission(PERMISOS.VER_AUDITORIA)).map((tab) => {
                   const count = tab.id === 'comentarios' ? respuestas.length : tab.id === 'archivos' ? (ticket.evidencias?.length || 0) : undefined
                   return (
                     <button

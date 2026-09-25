@@ -4,8 +4,8 @@ const api = axios.create({
   baseURL: '/api/v1',
 })
 
-export function getErrorMessage(err: any): string {
-  const data = err?.response?.data
+export function getErrorMessage(err: unknown): string {
+  const data = (err as any)?.response?.data
   if (!data) return 'Error de conexión'
 
   if (data.message && data.errors) {
@@ -19,7 +19,7 @@ export function getErrorMessage(err: any): string {
 }
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -31,6 +31,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('token')
+      sessionStorage.removeItem('token')
       window.location.href = '/login'
     }
     return Promise.reject(error)

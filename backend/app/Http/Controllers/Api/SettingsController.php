@@ -17,11 +17,6 @@ class SettingsController extends Controller
 
     public function update(Request $request)
     {
-        $rol = Auth::user()->rol;
-        if ($rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $request->validate([
             'system_name' => 'sometimes|string|max:255',
             'logo' => 'nullable|file|image|mimes:jpeg,jpg,png,svg|max:2048',

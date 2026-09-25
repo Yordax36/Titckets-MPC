@@ -16,7 +16,7 @@ class CheckPermission
         $this->permisoService = $permisoService;
     }
 
-    public function handle(Request $request, Closure $next, string $permiso): Response
+    public function handle(Request $request, Closure $next, string ...$permisos): Response
     {
         $user = $request->user();
 
@@ -24,10 +24,17 @@ class CheckPermission
             return response()->json(['message' => 'No autenticado'], 401);
         }
 
-        if (!$this->permisoService->userHasPermission($user, $permiso)) {
-            return response()->json(['message' => 'No autorizado'], 403);
+        // Admin bypass
+        if ($user->rol && $user->rol->nombre === 'Administrador') {
+            return $next($request);
         }
 
-        return $next($request);
+        foreach ($permisos as $permiso) {
+            if ($this->permisoService->userHasPermission($user, $permiso)) {
+                return $next($request);
+            }
+        }
+
+        return response()->json(['message' => 'No autorizado'], 403);
     }
 }

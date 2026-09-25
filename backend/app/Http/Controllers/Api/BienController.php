@@ -77,11 +77,6 @@ class BienController extends Controller
 
     public function store(Request $request)
     {
-        $rol = Auth::user()->rol;
-        if (!in_array($rol->nombre, ['Administrador', 'Tecnico'])) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $request->validate([
             'tipo_bien_id' => 'required|exists:tipo_bienes,id',
             'area_id' => 'required|exists:areas,id',
@@ -167,11 +162,6 @@ class BienController extends Controller
 
     public function update(Request $request, $id)
     {
-        $rol = Auth::user()->rol;
-        if (!in_array($rol->nombre, ['Administrador', 'Tecnico'])) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $bien = Bien::findOrFail($id);
 
         $request->validate([
@@ -235,11 +225,6 @@ class BienController extends Controller
 
     public function destroy($id)
     {
-        $rol = Auth::user()->rol;
-        if ($rol->nombre !== 'Administrador') {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $bien = Bien::findOrFail($id);
         $bien->delete();
 
@@ -378,11 +363,6 @@ class BienController extends Controller
 
     public function cambiarEstado(Request $request, $id)
     {
-        $rol = Auth::user()->rol;
-        if (!in_array($rol->nombre, ['Administrador', 'Tecnico'])) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $request->validate([
             'estado' => 'required|in:operativo,mantenimiento,programado,inactivo,baja',
         ]);
@@ -415,11 +395,6 @@ class BienController extends Controller
     // Mantenimiento
     public function storeMantenimiento(Request $request, $bienId)
     {
-        $rol = Auth::user()->rol;
-        if (!in_array($rol->nombre, ['Administrador', 'Tecnico'])) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-
         $request->validate([
             'tecnico_id' => 'nullable|exists:tecnicos,id',
             'fecha' => 'required|date',

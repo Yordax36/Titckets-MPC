@@ -792,7 +792,7 @@ export default function AreaListPage() {
               {detailTab === 'tickets' && (
                 <div className="space-y-2">
                   {detailArea.tickets && detailArea.tickets.length > 0 ? (
-                    detailArea.tickets.map((ticket) => (
+                    detailArea.tickets.map((ticket: any) => (
                       <div key={ticket.id} className="bg-gray-50 rounded-lg p-3 flex items-start gap-3">
                         <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                           ticket.estado === 'pendiente' ? 'bg-gray-100' :
