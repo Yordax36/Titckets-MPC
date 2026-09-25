@@ -12,13 +12,8 @@ class Area extends Model
     protected $fillable = [
         'nombre',
         'correo',
-        'password_correo',
         'descripcion',
         'estado',
-    ];
-
-    protected $hidden = [
-        'password_correo',
     ];
 
     public function asignaciones()

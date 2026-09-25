@@ -22,7 +22,7 @@ class UsuarioResource extends JsonResource
                 'nombre' => $this->rol->nombre,
             ]),
             'estado' => $this->estado,
-            'avatar' => $this->avatar,
+            'foto' => $this->foto,
             'ultimo_acceso_at' => $this->ultimo_acceso_at,
             'created_at' => $this->created_at,
         ];

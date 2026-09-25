@@ -20,7 +20,7 @@ class StoreUsuarioRequest extends FormRequest
             'area_id' => 'nullable|exists:areas,id',
             'rol_id' => 'required|exists:roles,id',
             'estado' => 'nullable|in:activo,inactivo',
-            'avatar' => 'nullable|string',
+            'foto' => 'nullable|file|image|mimes:jpeg,jpg,png|max:2048',
             'jefe_nombre' => 'nullable|string|max:255',
             'jefe_apellido' => 'nullable|string|max:255',
             'jefe_cargo' => 'nullable|string|max:255',

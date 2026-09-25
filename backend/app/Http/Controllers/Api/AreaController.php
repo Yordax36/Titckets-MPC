@@ -82,7 +82,7 @@ class AreaController extends Controller
                 'name' => $area->nombre,
                 'email' => $area->correo,
                 'username' => $area->correo,
-                'password' => Hash::make($area->password_correo),
+                'password' => Hash::make('Area#' . $area->id),
                 'dni' => 'AREA-' . str_pad($area->id, 3, '0', STR_PAD_LEFT),
                 'cargo' => 'Área Institucional',
                 'rol_id' => $rolArea->id,
@@ -156,8 +156,8 @@ class AreaController extends Controller
                 $updateData['username'] = $request->correo;
             }
 
-            if ($request->filled('password_correo')) {
-                $updateData['password'] = Hash::make($request->password_correo);
+            if ($request->filled('password')) {
+                $updateData['password'] = Hash::make($request->password);
             }
 
             $linkedUser->update($updateData);

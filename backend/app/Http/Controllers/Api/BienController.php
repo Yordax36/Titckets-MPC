@@ -123,7 +123,7 @@ class BienController extends Controller
                 }
             }
 
-            $this->registrarHistorial($bien, 'creacion', 'Bien registrado en el sistema', Auth::user()->nombres . ' ' . Auth::user()->apellidos);
+            $this->registrarHistorial($bien, 'creacion', 'Bien registrado en el sistema');
 
             DB::commit();
 
@@ -208,7 +208,7 @@ class BienController extends Controller
             }
 
             if (!empty($cambios)) {
-                $this->registrarHistorial($bien, 'actualizacion', implode(', ', $cambios), Auth::user()->nombres . ' ' . Auth::user()->apellidos);
+                $this->registrarHistorial($bien, 'actualizacion', implode(', ', $cambios));
             }
 
             if ($request->has('especificaciones')) {
@@ -394,8 +394,7 @@ class BienController extends Controller
         $this->registrarHistorial(
             $bien,
             'cambio_estado',
-            "Estado cambiado de \"{$estadoAnterior}\" a \"{$request->estado}\"",
-            Auth::user()->nombres . ' ' . Auth::user()->apellidos
+            "Estado cambiado de \"{$estadoAnterior}\" a \"{$request->estado}\""
         );
 
         return response()->json([
@@ -443,8 +442,7 @@ class BienController extends Controller
         $this->registrarHistorial(
             $bien,
             'mantenimiento',
-            "Mantenimiento registrado: {$request->tipo_mantenimiento}",
-            Auth::user()->nombres . ' ' . Auth::user()->apellidos
+            "Mantenimiento registrado: {$request->tipo_mantenimiento}"
         );
 
         return response()->json([
@@ -501,13 +499,13 @@ class BienController extends Controller
         return "{$prefijoTipo}-{$prefijoArea}-{$numero}";
     }
 
-    private function registrarHistorial(Bien $bien, string $tipo, string $descripcion, string $usuario)
+    private function registrarHistorial(Bien $bien, string $tipo, string $descripcion, ?int $usuarioId = null)
     {
         BienHistorial::create([
             'bien_id' => $bien->id,
             'tipo_evento' => $tipo,
             'descripcion' => $descripcion,
-            'usuario' => $usuario,
+            'usuario_id' => $usuarioId ?? Auth::id(),
             'fecha' => now(),
         ]);
     }

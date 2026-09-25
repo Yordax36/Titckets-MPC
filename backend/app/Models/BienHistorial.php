@@ -15,12 +15,17 @@ class BienHistorial extends Model
         'bien_id',
         'tipo_evento',
         'descripcion',
-        'usuario',
+        'usuario_id',
         'fecha',
     ];
 
     public function bien()
     {
         return $this->belongsTo(Bien::class);
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class);
     }
 }

@@ -13,5 +13,6 @@ class Cargo extends Model
         'nombre',
         'descripcion',
         'estado',
+        'unico',
     ];
 }
