@@ -15,4 +15,9 @@ class Cargo extends Model
         'estado',
         'unico',
     ];
+
+    public function areaUsuarios()
+    {
+        return $this->hasMany(AreaUsuario::class, 'cargo_id');
+    }
 }

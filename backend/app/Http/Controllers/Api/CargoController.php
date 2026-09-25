@@ -90,10 +90,23 @@ class CargoController extends Controller
         }
 
         $cargo = Cargo::findOrFail($id);
-        $cargo->delete();
+        
+        // Verificar si tiene asignaciones activas
+        $tieneAsignaciones = $cargo->areaUsuarios()
+            ->where('estado_asignacion', 'activo')
+            ->exists();
+        
+        if ($tieneAsignaciones) {
+            return response()->json([
+                'message' => 'No se puede desactivar. El cargo tiene designaciones activas.',
+            ], 422);
+        }
+
+        $cargo->update(['estado' => 'inactivo']);
 
         return response()->json([
-            'message' => 'Cargo eliminado correctamente',
+            'message' => 'Cargo desactivado correctamente',
+            'data' => $cargo,
         ]);
     }
 }
