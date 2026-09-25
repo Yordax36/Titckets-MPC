@@ -88,6 +88,14 @@ class RolPermisoSeeder extends Seeder
             }
         }
 
+        // Personal: sin permisos de sistema (solo registro de datos)
+        $personalPermisos = [];
+        foreach ($personalPermisos as $nombre) {
+            if (isset($permisos[$nombre])) {
+                $rolPermisos[] = ['rol_id' => 4, 'permiso_id' => $permisos[$nombre]];
+            }
+        }
+
         DB::table('rol_permisos')->insert($rolPermisos);
     }
 }

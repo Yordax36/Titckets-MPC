@@ -54,6 +54,7 @@ class UsuarioController extends Controller
             'apellidos' => 'required|string|max:255',
             'dni' => 'nullable|string|max:15',
             'telefono' => 'nullable|string|max:20',
+            'email' => 'required|email|max:255|unique:users,email',
             'correo_institucional' => 'nullable|email|max:255|unique:users,correo_institucional',
             'fecha_ingreso' => 'required|date',
             'fecha_cese' => 'nullable|date|after_or_equal:fecha_ingreso',
@@ -84,7 +85,7 @@ class UsuarioController extends Controller
         }
 
         $data = $request->only([
-            'nombres', 'apellidos', 'dni', 'telefono', 'correo_institucional',
+            'nombres', 'apellidos', 'dni', 'telefono', 'email', 'correo_institucional',
             'fecha_ingreso', 'fecha_cese', 'actualmente_laborando', 'estado',
         ]);
         $data['rol_id'] = $personalRoleId;

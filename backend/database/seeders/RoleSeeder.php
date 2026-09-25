@@ -31,6 +31,13 @@ class RoleSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'id' => 4,
+                'nombre' => 'Personal',
+                'descripcion' => 'Personal municipal sin acceso al sistema de tickets.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }
