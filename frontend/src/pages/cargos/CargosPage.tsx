@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
+import { Briefcase, Plus, Pencil, Search, Loader2 } from 'lucide-react';
 import type { Cargo } from '../../api/cargoApi';
-import { getCargos, createCargo, updateCargo, deleteCargo } from '../../api/cargoApi';
+import { getCargos, createCargo, updateCargo } from '../../api/cargoApi';
 import Modal from '../../components/ui/Modal';
-import ConfirmModal from '../../components/ui/ConfirmModal';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../api/axios';
 
@@ -13,9 +12,7 @@ export default function CargosPage() {
   const [search, setSearch] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [editingCargo, setEditingCargo] = useState<Cargo | null>(null);
-  const [deletingCargo, setDeletingCargo] = useState<Cargo | null>(null);
   const [form, setForm] = useState({ nombre: '', descripcion: '' });
   const [saving, setSaving] = useState(false);
 
@@ -61,16 +58,6 @@ export default function CargosPage() {
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally { setSaving(false); }
-  };
-
-  const handleDelete = async () => {
-    if (!deletingCargo) return;
-    try {
-      await deleteCargo(deletingCargo.id);
-      toast.success('Cargo eliminado');
-      setConfirmOpen(false);
-      loadCargos();
-    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const toggleEstado = async (cargo: Cargo) => {
