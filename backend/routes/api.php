@@ -30,8 +30,16 @@ Route::prefix('v1')->group(function () {
         // Cargos
         Route::get('cargos/all', [\App\Http\Controllers\Api\CargoController::class, 'all'])
             ->middleware('permission:ver_cargos');
-        Route::apiResource('cargos', \App\Http\Controllers\Api\CargoController::class)
+        Route::get('cargos', [\App\Http\Controllers\Api\CargoController::class, 'index'])
             ->middleware('permission:ver_cargos');
+        Route::post('cargos', [\App\Http\Controllers\Api\CargoController::class, 'store'])
+            ->middleware('permission:crear_cargo');
+        Route::get('cargos/{id}', [\App\Http\Controllers\Api\CargoController::class, 'show'])
+            ->middleware('permission:ver_cargos');
+        Route::put('cargos/{id}', [\App\Http\Controllers\Api\CargoController::class, 'update'])
+            ->middleware('permission:editar_cargo');
+        Route::delete('cargos/{id}', [\App\Http\Controllers\Api\CargoController::class, 'destroy'])
+            ->middleware('permission:eliminar_cargo');
 
         // Designaciones
         Route::get('designaciones/disponibles/areas', [\App\Http\Controllers\Api\DesignacionController::class, 'areasDisponibles'])
