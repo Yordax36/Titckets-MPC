@@ -152,28 +152,30 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request): JsonResponse
     {
-        $year = date('Y');
-        $lastTicket = Ticket::whereYear('created_at', $year)->max('numero');
-        if ($lastTicket) {
-            $lastNumber = (int) substr($lastTicket, -6);
-            $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '000001';
-        }
-        $numero = "TKT-{$year}-{$newNumber}";
-
-        $data = $request->validated();
-        $data['numero'] = $numero;
-        $data['creado_por'] = $request->user()->id;
-
-        if (empty($data['area_id']) && $request->user()->rol->nombre === 'Area Usuaria') {
-            $area = $request->user()->area ?? $request->user()->areaInstitucional;
-            if ($area) {
-                $data['area_id'] = $area->id;
+        $ticket = \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $year = date('Y');
+            $lastTicket = Ticket::whereYear('created_at', $year)->lockForUpdate()->max('numero');
+            if ($lastTicket) {
+                $lastNumber = (int) substr($lastTicket, -6);
+                $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '000001';
             }
-        }
+            $numero = "TKT-{$year}-{$newNumber}";
 
-        $ticket = Ticket::create($data);
+            $data = $request->validated();
+            $data['numero'] = $numero;
+            $data['creado_por'] = $request->user()->id;
+
+            if (empty($data['area_id']) && $request->user()?->rol?->nombre === 'Area Usuaria') {
+                $area = $request->user()->area ?? $request->user()->areaInstitucional;
+                if ($area) {
+                    $data['area_id'] = $area->id;
+                }
+            }
+
+            return Ticket::create($data);
+        });
 
         TicketHistorial::create([
             'ticket_id' => $ticket->id,

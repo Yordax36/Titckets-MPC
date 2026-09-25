@@ -1,6 +1,5 @@
 import { create } from 'zustand'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import api from '../api/axios'
 
 interface SettingsState {
   system_name: string
@@ -14,15 +13,10 @@ const useSettingsStore = create<SettingsState>((set) => ({
 
   fetchSettings: async () => {
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API_URL}/api/v1/settings`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      if (!res.ok) return
-      const d = await res.json()
+      const { data } = await api.get('/settings')
       set({
-        system_name: d?.system_name || 'MPC Service Desk',
-        logo: d?.logo ? `${API_URL}/${d.logo}` : null,
+        system_name: data?.system_name || 'MPC Service Desk',
+        logo: data?.logo || null,
       })
     } catch {
       // keep defaults

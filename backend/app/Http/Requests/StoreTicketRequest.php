@@ -19,7 +19,7 @@ class StoreTicketRequest extends FormRequest
             'categoria' => 'required|string|max:255',
         ];
 
-        if ($this->user() && $this->user()->rol->nombre !== 'Area Usuaria') {
+        if ($this->user() && $this->user()?->rol?->nombre !== 'Area Usuaria') {
             $rules['area_id'] = 'required|exists:areas,id';
         } else {
             $rules['area_id'] = 'nullable|exists:areas,id';

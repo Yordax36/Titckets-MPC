@@ -12,6 +12,6 @@ class AuditHelper
         if ($area) {
             return $area->nombre;
         }
-        return $user->rol->nombre ?? '';
+        return $user->rol?->nombre ?? '';
     }
 }

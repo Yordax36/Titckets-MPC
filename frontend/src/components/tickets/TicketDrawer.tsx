@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
+import api from '../../api/axios'
 import { getTicket, cambiarEstado, asignarTecnico, historial, uploadEvidencia, deleteEvidencia } from '../../api/ticketApi'
 import { getRespuestas, createRespuesta } from '../../api/respuestaApi'
 import { getAllTecnicos } from '../../api/tecnicoApi'
@@ -93,6 +94,23 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
     if (!ticket) return
     try { await asignarTecnico(ticket.id, Number(tecnicoId)); toast.success('Técnico asignado'); loadTicket(); onRefresh?.(); setShowAsignar(false) }
     catch { toast.error('Error al asignar técnico') }
+  }
+
+  const downloadPdf = async () => {
+    if (!ticket) return
+    try {
+      const response = await api.get(`/tickets/${ticket.id}/pdf`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `${ticket.numero}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Error al descargar PDF')
+    }
   }
 
   const handleSendComment = async (e: React.FormEvent) => {
@@ -202,7 +220,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Creado el {formatDateTime(ticket.created_at)}</p>
                 </div>
-                <button onClick={() => window.open(`/api/v1/tickets/${ticket.id}/pdf?token=${localStorage.getItem('token')?.replace('Bearer ', '')}`, '_blank')} className="p-2 rounded-lg hover:bg-blue-50 text-blue-500 hover:text-blue-700 transition-colors" title="Descargar PDF">
+                <button onClick={downloadPdf} className="p-2 rounded-lg hover:bg-blue-50 text-blue-500 hover:text-blue-700 transition-colors" title="Descargar PDF">
                   <Download className="h-4 w-4" />
                 </button>
                 <button onClick={() => setIsMaximized(!isMaximized)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
@@ -257,7 +275,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
                         <button onClick={() => { navigator.clipboard.writeText(ticket.numero); toast.success('Número copiado'); setShowMasAcciones(false) }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors">Copiar número</button>
                         <button onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('URL copiada'); setShowMasAcciones(false) }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors">Copiar enlace</button>
                         <div className="border-t border-gray-100 my-1" />
-                        <button onClick={() => { window.open(`/api/v1/tickets/${ticket.id}/pdf?token=${localStorage.getItem('token')?.replace('Bearer ', '')}`, '_blank'); setShowMasAcciones(false) }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"><Download className="h-4 w-4" /> Descargar PDF</button>
+                        <button onClick={() => { downloadPdf(); setShowMasAcciones(false) }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"><Download className="h-4 w-4" /> Descargar PDF</button>
                       </div>
                     )}
                   </div>
@@ -452,13 +470,10 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
-                <button onClick={onClose} className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
-                  Cerrar ticket
-                </button>
-                <button onClick={() => { toast.success('Cambios guardados'); onClose() }} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  Guardar cambios
+              <div className="flex items-center justify-end px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
+                <button onClick={onClose} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm">
+                  <X className="h-4 w-4" />
+                  Cerrar
                 </button>
               </div>
             </>

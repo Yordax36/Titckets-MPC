@@ -57,7 +57,7 @@ class UsuarioController extends Controller
             'apellidos' => 'required|string|max:255',
             'dni' => 'nullable|string|max:15',
             'telefono' => 'nullable|string|max:20',
-            'correo_institucional' => 'nullable|email|max:255',
+            'correo_institucional' => 'nullable|email|max:255|unique:users,correo_institucional',
             'fecha_ingreso' => 'required|date',
             'fecha_cese' => 'nullable|date|after_or_equal:fecha_ingreso',
             'actualmente_laborando' => 'required|boolean',
@@ -150,7 +150,7 @@ class UsuarioController extends Controller
             'apellidos' => 'sometimes|required|string|max:255',
             'dni' => 'sometimes|nullable|string|max:15',
             'telefono' => 'sometimes|nullable|string|max:20',
-            'correo_institucional' => 'sometimes|nullable|email|max:255',
+            'correo_institucional' => 'sometimes|nullable|email|max:255|unique:users,correo_institucional,' . $id,
             'fecha_ingreso' => 'sometimes|required|date',
             'fecha_cese' => 'nullable|date|after_or_equal:fecha_ingreso',
             'actualmente_laborando' => 'sometimes|boolean',
@@ -275,6 +275,11 @@ class UsuarioController extends Controller
 
     public function toggleEstado(Request $request, $id)
     {
+        $authUser = Auth::user();
+        if ($authUser->rol->nombre !== 'Administrador') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
         $usuario = User::findOrFail($id);
         $usuario->estado = $usuario->estado === 'activo' ? 'inactivo' : 'activo';
         $usuario->save();

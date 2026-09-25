@@ -57,7 +57,7 @@ class AuthController extends Controller
         }
 
         $user = Auth::user()->load(['areaInstitucional', 'area', 'areaActual.area', 'rol.permisos']);
-        $permissions = $user->rol->permisos->pluck('nombre')->toArray();
+        $permissions = $user->rol?->permisos?->pluck('nombre')->toArray() ?? [];
 
         GeneralAudit::create([
             'user_id' => $user->id,
@@ -127,7 +127,7 @@ class AuthController extends Controller
     {
         $token = auth()->refresh(true, true);
         $user = Auth::user()->load(['areaInstitucional', 'area', 'areaActual.area', 'rol.permisos']);
-        $permissions = $user->rol->permisos->pluck('nombre')->toArray();
+        $permissions = $user->rol?->permisos?->pluck('nombre')->toArray() ?? [];
 
         return response()->json([
             'token' => $token,
@@ -139,7 +139,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user()->load(['areaInstitucional', 'area', 'areaActual.area', 'rol.permisos']);
-        $permissions = $user->rol->permisos->pluck('nombre')->toArray();
+        $permissions = $user->rol?->permisos?->pluck('nombre')->toArray() ?? [];
 
         return response()->json([
             'user' => $user,

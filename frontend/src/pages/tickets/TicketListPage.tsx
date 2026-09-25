@@ -321,7 +321,7 @@ export default function TicketListPage() {
                               {ticket.created_by?.nombres?.charAt(0)?.toUpperCase() || '?'}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{ticket.area?.nombre || '—'}</p>
+                              <p className="text-sm font-medium text-gray-900 truncate">{ticket.created_by?.nombres || '—'} {ticket.created_by?.apellidos || ''}</p>
                               <p className="text-[11px] text-gray-500 truncate">{ticket.area?.nombre || '—'}</p>
                             </div>
                           </div>
