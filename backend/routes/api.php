@@ -6,6 +6,7 @@ Route::prefix('v1')->group(function () {
 
     // Public routes
     Route::post('/auth/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+    Route::get('/settings', [\App\Http\Controllers\Api\SettingsController::class, 'index']);
 
     // Protected routes
     Route::prefix('auth')->middleware('jwt')->group(function () {
@@ -73,7 +74,6 @@ Route::prefix('v1')->group(function () {
         Route::post('dni/lookup', [\App\Http\Controllers\Api\DniController::class, 'lookup']);
 
         // Settings
-        Route::get('settings', [\App\Http\Controllers\Api\SettingsController::class, 'index']);
         Route::put('settings', [\App\Http\Controllers\Api\SettingsController::class, 'update']);
 
         // Area Profile

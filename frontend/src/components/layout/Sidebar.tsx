@@ -4,6 +4,7 @@ import { LayoutDashboard, Ticket, Users, Building2, Shield, Link2, Briefcase, Se
 import useAuth from '../../hooks/useAuth'
 import useUIStore from '../../store/uiStore'
 import { useSettings } from '../../hooks/useSettings'
+import HelpGuide from './HelpGuide'
 
 const NavLinkItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => (
   <NavLink
@@ -109,40 +110,22 @@ export default function Sidebar() {
           </nav>
 
           <div className="p-3 border-t border-gray-100 dark:border-gray-700">
-            <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 text-center">
-              <div className="flex items-center justify-center gap-2 mb-1.5">
-                <div className="h-6 w-6 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <HelpCircle className="h-3.5 w-3.5 text-purple-600" />
-                </div>
-                <span className="text-[11px] font-semibold text-gray-800">¿Necesitas ayuda?</span>
+            <div className="rounded-xl bg-purple-50 border border-purple-100 p-3 flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <HelpCircle className="h-4 w-4 text-purple-600" />
               </div>
-              <p className="text-[10px] text-gray-500 mb-2">Consulta la guía del sistema</p>
-              <button onClick={() => setGuideOpen(true)} className="w-full py-1.5 px-3 bg-white border border-gray-200 rounded-lg text-[11px] font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-colors">
-                Ver guía
-              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-gray-800">¿Necesitas ayuda?</p>
+                <button onClick={() => setGuideOpen(true)} className="text-[11px] font-medium text-purple-600 hover:text-purple-700 transition-colors">
+                  Ver guía →
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </aside>
 
-      {guideOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center">
-            <div className="h-16 w-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-              <HelpCircle className="h-8 w-8 text-purple-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Guía del Sistema</h2>
-            <p className="text-sm text-gray-500 mb-6">Estamos trabajando en una guía completa para ayudarte a sacar el máximo provecho del sistema.</p>
-            <div className="bg-gray-50 rounded-xl p-4 mb-6">
-              <p className="text-xs text-gray-500">Próximamente estarémos disponibles</p>
-            </div>
-            <button onClick={() => setGuideOpen(false)}
-              className="w-full py-2.5 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition-colors">
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
+      {guideOpen && <HelpGuide onClose={() => setGuideOpen(false)} />}
     </>
   )
 }
