@@ -84,7 +84,7 @@ return new class extends Migration
         // 12 & 13. Fix email and password nullable in users
         // First, handle any null values
         DB::statement("UPDATE users SET email = 'unknown@placeholder.com' WHERE email IS NULL");
-        DB::statement("UPDATE users SET password = Hash::make('changeme') WHERE password IS NULL");
+        DB::statement("UPDATE users SET password = '" . bcrypt('changeme') . "' WHERE password IS NULL");
         Schema::table('users', function (Blueprint $table) {
             $table->string('email')->nullable(false)->change();
             $table->string('password')->nullable(false)->change();

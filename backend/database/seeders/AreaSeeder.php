@@ -66,7 +66,6 @@ class AreaSeeder extends Seeder
                 ['nombre' => $areaData['nombre']],
                 [
                     'correo' => $areaData['correo'],
-                    'password_correo' => 'MPC@2026!',
                     'estado' => 'activo',
                 ]
             );
