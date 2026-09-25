@@ -136,10 +136,6 @@ export default function CargosPage() {
                       <button onClick={() => openEdit(cargo)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => { setDeletingCargo(cargo); setConfirmOpen(true); }}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -174,9 +170,6 @@ export default function CargosPage() {
           </div>
         </div>
       </Modal>
-
-      <ConfirmModal isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={handleDelete}
-        title="Eliminar Cargo" message={`¿Estás seguro de eliminar el cargo "${deletingCargo?.nombre}"? Esta acción no se puede deshacer.`} variant="danger" />
     </div>
   );
 }
