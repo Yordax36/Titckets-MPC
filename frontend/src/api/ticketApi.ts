@@ -11,8 +11,6 @@ export const createTicket = (data: Record<string, unknown>) =>
 export const updateTicket = (id: number, data: Record<string, unknown>) =>
   api.put(`/tickets/${id}`, data)
 
-export const deleteTicket = (id: number) => api.delete(`/tickets/${id}`)
-
 export const cambiarEstado = (id: number, estado: string, comentario?: string) =>
   api.put(`/tickets/${id}/estado`, { estado, comentario })
 

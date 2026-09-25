@@ -85,7 +85,7 @@ class DesignacionController extends Controller
 
             GeneralAudit::create([
                 'user_id' => $authUser->id,
-                'rol' => AuditHelper::getRolDisplay($authUser),
+            'rol' => AuditHelper::getRolDisplay(Auth::user()),
                 'area' => $area->nombre,
                 'accion' => 'crear',
                 'modelo' => 'AreaUsuario',

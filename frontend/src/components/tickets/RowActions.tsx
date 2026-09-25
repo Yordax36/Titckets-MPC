@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MoreVertical, XCircle, Trash2, RefreshCw } from 'lucide-react'
+import { MoreVertical, XCircle, RefreshCw } from 'lucide-react'
 
 interface RowActionsProps {
   onCloseTicket?: () => void
   onReopen?: () => void
-  onDelete?: () => void
   isTerminal?: boolean
 }
 
-export default function RowActions({ onCloseTicket, onReopen, onDelete, isTerminal }: RowActionsProps) {
+export default function RowActions({ onCloseTicket, onReopen, isTerminal }: RowActionsProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -36,7 +35,6 @@ export default function RowActions({ onCloseTicket, onReopen, onDelete, isTermin
   const menuItems = [
     ...(onCloseTicket && !isTerminal ? [{ icon: XCircle, label: 'Cerrar ticket', onClick: () => { onCloseTicket(); setOpen(false) } }] : []),
     ...(onReopen && isTerminal ? [{ icon: RefreshCw, label: 'Reabrir ticket', onClick: () => { onReopen(); setOpen(false) } }] : []),
-    ...(onDelete ? [{ icon: Trash2, label: 'Eliminar', onClick: () => { onDelete(); setOpen(false) }, danger: true }] : []),
   ]
 
   if (menuItems.length === 0) return null

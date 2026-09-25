@@ -6,14 +6,13 @@ import {
   ChevronUp, ChevronDown, FileText, Filter,
   Camera, MessageSquare
 } from 'lucide-react'
-import { getTickets, createTicket, deleteTicket, uploadEvidencia, cambiarEstado } from '../../api/ticketApi'
+import { getTickets, createTicket, uploadEvidencia, cambiarEstado } from '../../api/ticketApi'
 import { getUsuarios } from '../../api/usuarioApi'
 import { getAreas } from '../../api/areaApi'
 import Button from '../../components/ui/Button'
 import Card, { CardBody } from '../../components/ui/Card'
 import Pagination from '../../components/ui/Pagination'
 import Select from '../../components/ui/Select'
-import ConfirmModal from '../../components/ui/ConfirmModal'
 
 import SkeletonTable from '../../components/ui/SkeletonTable'
 import TicketDrawer from '../../components/tickets/TicketDrawer'
@@ -61,10 +60,6 @@ export default function TicketListPage() {
   // Detail drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null)
-
-  // Delete
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
   // Users
   const [usuarios, setUsuarios] = useState<any[]>([])
@@ -159,13 +154,6 @@ export default function TicketListPage() {
 
   const openDetail = (id: number) => {
     setSelectedTicketId(id); setDrawerOpen(true)
-  }
-
-  const handleDelete = async () => {
-    if (!deleteId) return; setDeleting(true)
-    try { await deleteTicket(deleteId); toast.success('Ticket eliminado'); setDeleteId(null); loadData() }
-    catch (e) { toast.error(getErrorMessage(e)) }
-    finally { setDeleting(false) }
   }
 
   const handleExport = (type: 'excel' | 'pdf') => {
@@ -375,7 +363,6 @@ export default function TicketListPage() {
                             <RowActions
                               onCloseTicket={() => cambiarEstado(ticket.id, 'cerrado').then(() => { toast.success('Ticket cerrado'); loadData() }).catch((e: any) => toast.error(getErrorMessage(e)))}
                               onReopen={() => cambiarEstado(ticket.id, 'pendiente').then(() => { toast.success('Ticket reabierto'); loadData() }).catch((e: any) => toast.error(getErrorMessage(e)))}
-                              onDelete={() => setDeleteId(ticket.id)}
                               isTerminal={ticket.estado === 'cerrado' || ticket.estado === 'cancelado'}
                             />
                           </div>
@@ -424,9 +411,6 @@ export default function TicketListPage() {
         currentUserId={user?.id}
         onRefresh={loadData}
       />
-
-      {/* Delete Confirm */}
-      <ConfirmModal isOpen={deleteId !== null} onClose={() => setDeleteId(null)} onConfirm={handleDelete} title="Eliminar ticket" message="¿Estás seguro? Esta acción no se puede deshacer." confirmText="Eliminar" variant="danger" loading={deleting} />
     </div>
   )
 }
