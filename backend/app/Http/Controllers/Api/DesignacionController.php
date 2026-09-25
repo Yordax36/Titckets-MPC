@@ -49,9 +49,22 @@ class DesignacionController extends Controller
         $area = Area::findOrFail($request->area_id);
         $usuario = User::findOrFail($request->usuario_id);
         $cargo = Cargo::findOrFail($request->cargo_id);
+
+        // Validar cargo único no repetido
+        if ($cargo->unico) {
+            $existe = AreaUsuario::where('cargo_id', $cargo->id)
+                ->where('estado_asignacion', 'activo')
+                ->exists();
+            if ($existe) {
+                return response()->json([
+                    'message' => "El cargo {$cargo->nombre} es único y ya está asignado a otra persona.",
+                ], 422);
+            }
+        }
+
         $authUser = Auth::user();
 
-        return DB::transaction(function () use ($request, $area, $usuario, $cargo, $authUser, $rol) {
+        return DB::transaction(function () use ($request, $area, $usuario, $cargo, $authUser) {
             $now = now();
 
             $designacionActiva = AreaUsuario::where('area_id', $request->area_id)
@@ -124,6 +137,22 @@ class DesignacionController extends Controller
             'observaciones' => 'nullable|string|max:1000',
             'fecha_inicio' => 'sometimes|date',
         ]);
+
+        // Validar cargo único no repetido (si se está cambiando el cargo)
+        if ($request->filled('cargo_id') && $request->cargo_id != $designacion->cargo_id) {
+            $nuevoCargo = Cargo::findOrFail($request->cargo_id);
+            if ($nuevoCargo->unico) {
+                $existe = AreaUsuario::where('cargo_id', $nuevoCargo->id)
+                    ->where('estado_asignacion', 'activo')
+                    ->where('id', '!=', $designacion->id)
+                    ->exists();
+                if ($existe) {
+                    return response()->json([
+                        'message' => "El cargo {$nuevoCargo->nombre} es único y ya está asignado a otra persona.",
+                    ], 422);
+                }
+            }
+        }
 
         $designacion->update($request->only(['usuario_id', 'cargo_id', 'tipo_designacion', 'observaciones', 'fecha_inicio']));
         $designacion->load(['area', 'usuario', 'cargoRelacion', 'usuarioDesignador']);

@@ -54,7 +54,7 @@ class UsuarioController extends Controller
             'apellidos' => 'required|string|max:255',
             'dni' => 'nullable|string|max:15',
             'telefono' => 'nullable|string|max:20',
-            'email' => 'required|email|max:255|unique:users,email',
+            'email' => 'nullable|email|max:255|unique:users,email',
             'correo_institucional' => 'nullable|email|max:255|unique:users,correo_institucional',
             'fecha_ingreso' => 'required|date',
             'fecha_cese' => 'nullable|date|after_or_equal:fecha_ingreso',

@@ -10,6 +10,7 @@ class CargoSeeder extends Seeder
     public function run(): void
     {
         $cargos = [
+            ['nombre' => 'Alcalde', 'descripcion' => 'Máxima autoridad edilicia municipal', 'estado' => 'activo', 'unico' => true],
             ['nombre' => 'Gerente Municipal', 'descripcion' => 'Máxima autoridad ejecutiva municipal', 'estado' => 'activo', 'unico' => true],
             ['nombre' => 'Gerente de Administración Tributaria', 'descripcion' => 'Gerencia de tributación y rentas', 'estado' => 'activo', 'unico' => true],
             ['nombre' => 'Gerente de Desarrollo Económico', 'descripcion' => 'Gerencia de desarrollo económico local', 'estado' => 'activo', 'unico' => true],
