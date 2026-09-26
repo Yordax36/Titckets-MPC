@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             CargoSeeder::class,
             AdminUserSeeder::class,
             AreaUsersSeeder::class,
+            PersonalSeeder::class,
             TecnicoUsersSeeder::class,
             TecnicoMissingSeeder::class,
             TipoBienSeeder::class,
