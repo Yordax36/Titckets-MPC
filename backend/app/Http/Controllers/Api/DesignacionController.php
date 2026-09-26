@@ -246,15 +246,28 @@ class DesignacionController extends Controller
 
     public function areasDisponibles()
     {
-        $areas = Area::where('estado', 'activo')->orderBy('nombre')->get();
+        $areasConDesignacionActiva = AreaUsuario::where('estado_asignacion', 'activo')
+            ->pluck('area_id')
+            ->unique();
+
+        $areas = Area::where('estado', 'activo')
+            ->whereNotIn('id', $areasConDesignacionActiva)
+            ->orderBy('nombre')
+            ->get();
+
         return response()->json($areas);
     }
 
     public function usuariosDisponibles()
     {
+        $usuariosConDesignacionActiva = AreaUsuario::where('estado_asignacion', 'activo')
+            ->pluck('usuario_id')
+            ->unique();
+
         $usuarios = User::where('estado', 'activo')
             ->where('actualmente_laborando', true)
             ->whereHas('rol', fn($q) => $q->where('nombre', '!=', 'Administrador')->where('nombre', '!=', 'Area Usuaria'))
+            ->whereNotIn('id', $usuariosConDesignacionActiva)
             ->with('rol')
             ->orderBy('nombres')
             ->get();
