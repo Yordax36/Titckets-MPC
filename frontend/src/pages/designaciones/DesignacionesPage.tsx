@@ -286,21 +286,14 @@ export default function DesignacionesPage() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              {/* Step indicator */}
-              <div className="flex items-center justify-between mt-4">
-                {stepLabels.map((label, i) => (
-                  <div key={i} className="flex items-center flex-1 last:flex-none">
-                    <div className="flex items-center gap-2">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                        i + 1 < step ? 'bg-purple-600 text-white' : i + 1 === step ? 'bg-purple-600 text-white ring-2 ring-purple-200' : 'bg-gray-100 text-gray-400'
-                      }`}>
-                        {i + 1 < step ? <Check className="h-4 w-4" /> : i + 1}
-                      </div>
-                      <span className={`text-sm font-medium whitespace-nowrap ${i + 1 === step ? 'text-purple-600' : i + 1 < step ? 'text-gray-700' : 'text-gray-400'}`}>{label}</span>
-                    </div>
-                    {i < stepLabels.length - 1 && <div className={`flex-1 h-px mx-3 ${i + 1 < step ? 'bg-purple-300' : 'bg-gray-200'}`} />}
-                  </div>
-                ))}
+              <div className="mt-4 px-2">
+                <div className="flex items-center gap-1.5">
+                  {stepLabels.map((label, i) => (
+                    <span key={i} className={`text-xs font-medium px-2 py-1 rounded-full ${i + 1 === step ? 'bg-purple-100 text-purple-700' : 'text-gray-400'}`}>
+                      {label}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -313,7 +306,6 @@ export default function DesignacionesPage() {
                 {step === 1 && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="h-7 w-7 rounded-full bg-purple-600 text-white flex items-center justify-center text-[11px] font-bold">1</div>
                       <span className="text-sm font-semibold text-gray-700">Seleccionar Área</span>
                     </div>
                     <input type="text" placeholder="Buscar área..." value={areaSearch} onChange={e => setAreaSearch(e.target.value)}
@@ -338,7 +330,6 @@ export default function DesignacionesPage() {
                 {step === 2 && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="h-7 w-7 rounded-full bg-purple-600 text-white flex items-center justify-center text-[11px] font-bold">2</div>
                       <span className="text-sm font-semibold text-gray-700">Responsable</span>
                     </div>
                     <input type="text" placeholder="Buscar por nombre o DNI..." value={usuarioSearch} onChange={e => setUsuarioSearch(e.target.value)}
@@ -368,7 +359,6 @@ export default function DesignacionesPage() {
                 {step === 3 && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="h-7 w-7 rounded-full bg-purple-600 text-white flex items-center justify-center text-[11px] font-bold">3</div>
                       <span className="text-sm font-semibold text-gray-700">Cargo</span>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
@@ -391,7 +381,6 @@ export default function DesignacionesPage() {
                 {step === 4 && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="h-7 w-7 rounded-full bg-purple-600 text-white flex items-center justify-center text-[11px] font-bold">4</div>
                       <span className="text-sm font-semibold text-gray-700">Tipo de Designación</span>
                     </div>
                     <div className="space-y-3">
@@ -422,7 +411,6 @@ export default function DesignacionesPage() {
                 {step === 5 && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="h-7 w-7 rounded-full bg-purple-600 text-white flex items-center justify-center text-[11px] font-bold">5</div>
                       <span className="text-sm font-semibold text-gray-700">Confirmar Designación</span>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-4 space-y-3">
