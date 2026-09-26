@@ -17,7 +17,7 @@ class AreaController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Area::withCount('tickets')
+        $query = Area::withCount(['tickets', 'bienes'])
             ->with(['asignaciones' => function ($q) {
                 $q->where('estado_asignacion', 'activo')->with('usuario');
             }]);
