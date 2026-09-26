@@ -64,6 +64,8 @@ Route::prefix('v1')->group(function () {
             ->middleware('permission:ver_areas');
         Route::get('areas', [\App\Http\Controllers\Api\AreaController::class, 'index'])
             ->middleware('permission:ver_areas,ver_bienes');
+        Route::get('areas/{id}/pdf', [\App\Http\Controllers\Api\AreaPdfController::class, 'generate'])
+            ->middleware('permission:ver_areas');
         Route::apiResource('areas', \App\Http\Controllers\Api\AreaController::class)->except(['index'])
             ->middleware('permission:ver_areas');
 

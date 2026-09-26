@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Plus, Pencil, Trash2, Search, Users, UserX, Ticket, Copy, History, Clock, Calendar, Eye, FileText, Monitor, Wrench } from 'lucide-react';
-import { getAreas, createArea, updateArea, deleteArea, getAreaStats, getArea } from '../../api/areaApi';
+import { Building2, Plus, Pencil, Trash2, Search, Users, UserX, Ticket, Copy, History, Clock, Calendar, Eye, FileText, Monitor, Wrench, Download, Loader2 } from 'lucide-react';
+import { getAreas, createArea, updateArea, deleteArea, getAreaStats, getArea, getAreaPdf } from '../../api/areaApi';
 import { getAuditoria } from '../../api/auditApi';
 import { getBienes } from '../../api/bienApi';
 import type { Bien } from '../../api/bienApi';
@@ -125,6 +125,7 @@ export default function AreaListPage() {
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [areaBienes, setAreaBienes] = useState<Bien[]>([]);
   const [loadingBienes, setLoadingBienes] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -224,6 +225,26 @@ export default function AreaListPage() {
       setAuditData([]);
     } finally {
       setLoadingAudit(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!detailArea) return;
+    setPdfLoading(true);
+    try {
+      const res = await getAreaPdf(detailArea.id);
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `REPORTE_AREA_${String(detailArea.nombre || 'area').replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -605,12 +626,20 @@ export default function AreaListPage() {
         isOpen={detailOpen}
         onClose={() => setDetailOpen(false)}
         title="Detalle del Área"
-        size="lg"
+        size="xl"
       >
         {loadingDetail ? (
           <div className="py-12 text-center text-gray-500">Cargando...</div>
         ) : detailArea ? (
-          <div className="flex min-h-[480px]">
+          <div>
+            <div className="flex justify-end mb-3">
+              <button onClick={handleDownloadPdf} disabled={pdfLoading}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">
+                {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                Descargar PDF
+              </button>
+            </div>
+            <div className="flex min-h-[480px]">
             {/* Sidebar */}
             <div className="w-52 flex-shrink-0 border-r border-gray-100 pr-4">
               <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
@@ -981,6 +1010,7 @@ export default function AreaListPage() {
                   <p className="text-xs text-gray-400 mt-1">Estamos trabajando en ello</p>
                 </div>
               )}
+            </div>
             </div>
           </div>
         ) : null}
