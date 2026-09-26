@@ -26,8 +26,10 @@ class DesignacionController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('area', fn($q) => $q->where('nombre', 'like', "%{$search}%"))
-                ->orWhereHas('usuario', fn($q) => $q->where('nombres', 'like', "%{$search}%")->orWhere('apellidos', 'like', "%{$search}%"));
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('area', fn($qq) => $qq->where('nombre', 'like', "%{$search}%"))
+                    ->orWhereHas('usuario', fn($qq) => $qq->where('nombres', 'like', "%{$search}%")->orWhere('apellidos', 'like', "%{$search}%"));
+            });
         }
 
         $designaciones = $query->orderBy('fecha_inicio', 'desc')->get();
@@ -191,17 +193,22 @@ class DesignacionController extends Controller
         }
 
         $now = now();
-        $designacion->update([
-            'fecha_fin' => $now,
-            'estado_asignacion' => 'finalizado',
-            'activo' => false,
-        ]);
+
+        $designacion = DB::transaction(function () use ($designacion, $now) {
+            $designacion->update([
+                'fecha_fin' => $now,
+                'estado_asignacion' => 'finalizado',
+                'activo' => false,
+            ]);
+
+            return $designacion;
+        });
 
         $designacion->load(['area', 'usuario', 'cargoRelacion']);
 
         GeneralAudit::create([
             'user_id' => Auth::id(),
-            'rol' => AuditHelper::getRolDisplay($authUser),
+            'rol' => AuditHelper::getRolDisplay(Auth::user()),
             'area' => $designacion->area->nombre ?? '',
             'accion' => 'finalizar',
             'modelo' => 'AreaUsuario',
@@ -225,6 +232,7 @@ class DesignacionController extends Controller
             'usuarioDesignador',
         ])
             ->where('area_id', $areaId)
+            ->whereDoesntHave('usuario', fn ($q) => $q->where('cargo', 'Área Institucional'))
             ->orderBy('fecha_inicio', 'desc')
             ->get();
 
@@ -258,9 +266,12 @@ class DesignacionController extends Controller
         return response()->json($areas);
     }
 
-    public function usuariosDisponibles()
+    public function usuariosDisponibles(Request $request)
     {
         $usuariosConDesignacionActiva = AreaUsuario::where('estado_asignacion', 'activo')
+            ->when($request->filled('exclude_designacion_id'), function ($q) use ($request) {
+                $q->where('id', '!=', $request->exclude_designacion_id);
+            })
             ->pluck('usuario_id')
             ->unique();
 

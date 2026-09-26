@@ -23,6 +23,8 @@ class RolPermisoSeeder extends Seeder
             'crear_usuario', 'editar_usuario', 'eliminar_usuario', 'ver_usuarios',
             // Areas
             'crear_area', 'editar_area', 'eliminar_area', 'ver_areas',
+            // Sedes
+            'ver_sedes', 'crear_sede', 'editar_sede', 'eliminar_sede',
             // Tecnicos
             'ver_tecnicos', 'crear_tecnico', 'editar_tecnico', 'eliminar_tecnico',
             // Cargos

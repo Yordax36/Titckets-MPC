@@ -6,6 +6,8 @@ import {
 import Modal from '../ui/Modal'
 import { CATEGORIAS_NUEVAS, type CategoriaIncidencia } from '../../utils/constants'
 import { getAreas } from '../../api/areaApi'
+import toast from 'react-hot-toast'
+import { getErrorMessage } from '../../api/axios'
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
   Monitor, Printer, Wifi, Mail, Shield, Layout, Phone, MoreHorizontal,
@@ -54,7 +56,11 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
       setAreasLoading(true)
       getAreas({ per_page: 200 })
         .then(res => setAreas(res.data?.data || res.data || []))
-        .catch(() => {})
+        .catch((err) => {
+          if (err?.response?.status !== 403) {
+            toast.error(getErrorMessage(err))
+          }
+        })
         .finally(() => setAreasLoading(false))
     }
   }, [isOpen, needsAreaSelection])
@@ -116,12 +122,19 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles)
-    const valid = arr.filter(f => {
-      if (f.size > 10 * 1024 * 1024) {
-        return false
+    const permitidos = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const valid: File[] = []
+    let rechazados = 0
+    arr.forEach(f => {
+      if (f.size > 5 * 1024 * 1024 || !permitidos.includes(f.type)) {
+        rechazados++
+        return
       }
-      return true
+      valid.push(f)
     })
+    if (rechazados > 0) {
+      toast.error('Archivos descartados: solo imágenes JPG, PNG o WEBP hasta 5MB')
+    }
     setFiles(prev => [...prev, ...valid].slice(0, 5))
   }, [])
 
@@ -471,7 +484,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
+                  accept=".jpg,.jpeg,.png,.webp"
                   onChange={(e) => e.target.files && handleFiles(e.target.files)}
                   className="hidden"
                 />

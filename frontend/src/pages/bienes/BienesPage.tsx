@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { Bien, TipoBien, BienStats } from '../../api/bienApi';
 import { getBienes, getBienStats, getTiposBienes, getBienesPorArea } from '../../api/bienApi';
+import { getSedes } from '../../api/sedesApi';
 import usePermission from '../../hooks/usePermission';
 import { PERMISOS } from '../../utils/permissions';
 import toast from 'react-hot-toast';
@@ -56,6 +57,8 @@ export default function BienesPage() {
   const [areas, setAreas] = useState<AreaData[]>([]);
   const [stats, setStats] = useState<BienStats | null>(null);
   const [_tipos, setTipos] = useState<TipoBien[]>([]);
+  const [sedes, setSedes] = useState<{ id: number; nombre: string }[]>([]);
+  const [sedeFilter, setSedeFilter] = useState<number | ''>('');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -75,6 +78,12 @@ export default function BienesPage() {
 
   useEffect(() => { loadData(); }, [debouncedSearch]);
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const loadData = async () => {
     setLoading(true);
     setExpandedArea(null);
@@ -83,10 +92,11 @@ export default function BienesPage() {
       const areaParams: Record<string, any> = {};
       if (debouncedSearch) areaParams.search = debouncedSearch;
 
-      const [areasRes, statsRes, tiposRes] = await Promise.all([
+      const [areasRes, statsRes, tiposRes, sedesRes] = await Promise.all([
         getBienesPorArea(areaParams),
         getBienStats({}),
         getTiposBienes(),
+        getSedes({ per_page: 100 }).catch(() => ({ data: { data: [] } })),
       ]);
       const allAreas = (areasRes.data ?? areasRes) as AreaData[];
       setAreas(debouncedSearch ? allAreas.filter(a => {
@@ -95,6 +105,7 @@ export default function BienesPage() {
       }) : allAreas);
       setStats((statsRes.data ?? statsRes) as BienStats);
       setTipos((tiposRes.data ?? tiposRes) as TipoBien[]);
+      setSedes(((sedesRes.data as any)?.data ?? (sedesRes.data as any) ?? []) as { id: number; nombre: string }[]);
     } catch {
       toast.error('Error al cargar datos');
     } finally {
@@ -106,6 +117,7 @@ export default function BienesPage() {
     setLoadingArea(areaId);
     try {
       const params: Record<string, any> = { area_id: areaId, per_page: 100 };
+      if (sedeFilter) params.sede_id = sedeFilter;
       const res = await getBienes(params);
       const d = res.data ?? res;
       setAreaBienes(prev => ({ ...prev, [areaId]: d.data ?? d }));
@@ -114,7 +126,12 @@ export default function BienesPage() {
     } finally {
       setLoadingArea(null);
     }
-  }, []);
+  }, [sedeFilter]);
+
+  useEffect(() => {
+    if (expandedArea) loadAreaBienes(expandedArea);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sedeFilter]);
 
   const toggleArea = (areaId: number) => {
     if (expandedArea === areaId) {
@@ -176,6 +193,14 @@ export default function BienesPage() {
               placeholder="Buscar por código patrimonial, marca o modelo..."
               className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 transition-all shadow-sm" />
           </div>
+          <select
+            value={sedeFilter}
+            onChange={e => setSedeFilter(e.target.value ? Number(e.target.value) : '')}
+            className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+            title="Filtrar bienes por sede">
+            <option value="">Todas las sedes</option>
+            {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+          </select>
           {canManage && (
             <button onClick={() => navigate('/bienes/registrar')}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
@@ -296,7 +321,7 @@ export default function BienesPage() {
                                 <th className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Modelo</th>
                                 <th className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Estado</th>
                                 <th className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Responsable</th>
-                                <th className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Ubicación</th>
+                                <th className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Sede</th>
                                 <th className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Registro</th>
                                 <th className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Acciones</th>
                               </tr>
@@ -329,7 +354,11 @@ export default function BienesPage() {
                                     <td className="px-5 py-3 text-xs text-gray-500 max-w-[120px] truncate">
                                       {(bien as any).responsable_nombre || '—'}
                                     </td>
-                                    <td className="px-5 py-3 text-xs text-gray-500 max-w-[120px] truncate">{bien.ubicacion || '—'}</td>
+                                    <td className="px-5 py-3 text-xs text-gray-500 max-w-[120px] truncate">
+                                      {bien.sede?.nombre
+                                        ? `${bien.sede.nombre}${bien.ubicacion ? ` · ${bien.ubicacion}` : ''}`
+                                        : (bien.ubicacion || '—')}
+                                    </td>
                                     <td className="px-5 py-3 text-xs text-gray-400">
                                       {new Date(bien.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     </td>
@@ -428,7 +457,9 @@ export default function BienesPage() {
                     { icon: Tag, label: 'Modelo', value: drawerBien.modelo },
                     { icon: Hash, label: 'N° de Serie', value: drawerBien.numero_serie },
                     { icon: Hash, label: 'Código Patrimonial', value: drawerBien.codigo_patrimonial },
-                    { icon: MapPin, label: 'Ubicación', value: drawerBien.ubicacion },
+                    { icon: MapPin, label: 'Sede', value: drawerBien.sede?.nombre
+                      ? `${drawerBien.sede.nombre}${drawerBien.ubicacion ? ` · ${drawerBien.ubicacion}` : ''}`
+                      : (drawerBien.ubicacion || '—') },
                     { icon: Building2, label: 'Área', value: (drawerBien as any).area?.nombre },
                     { icon: User, label: 'Responsable', value: (drawerBien as any).responsable_nombre },
                   ].filter(f => f.value).map((field, i) => (

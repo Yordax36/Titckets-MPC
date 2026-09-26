@@ -50,6 +50,13 @@ class TicketController extends Controller
             $query->where('area_id', $request->area_id);
         }
 
+        if ($request->filled('fecha_desde') && !\Carbon\Carbon::hasFormat($request->fecha_desde, 'Y-m-d')) {
+            return response()->json(['message' => 'fecha_desde debe tener formato Y-m-d'], 422);
+        }
+        if ($request->filled('fecha_hasta') && !\Carbon\Carbon::hasFormat($request->fecha_hasta, 'Y-m-d')) {
+            return response()->json(['message' => 'fecha_hasta debe tener formato Y-m-d'], 422);
+        }
+
         if ($request->has('fecha_desde') && $request->fecha_desde !== '') {
             $query->whereDate('created_at', '>=', $request->fecha_desde);
         }
@@ -76,13 +83,19 @@ class TicketController extends Controller
         $sortBy = $request->get('sort_by', 'created_at');
         $sortDir = $request->get('sort_dir', 'desc');
         $allowedSorts = ['numero', 'titulo', 'estado', 'categoria', 'created_at'];
+        if (!in_array($sortDir, ['asc', 'desc'], true)) {
+            $sortDir = 'desc';
+        }
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDir);
         } else {
             $query->orderBy('created_at', 'desc');
         }
 
-        $perPage = $request->get('per_page', 15);
+        $perPage = (int) $request->get('per_page', 15);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 15;
+        }
         $tickets = $query->paginate($perPage);
 
         return response()->json($tickets);
@@ -128,10 +141,13 @@ class TicketController extends Controller
 
         $porTecnico = (clone $query)
             ->join('users', 'tickets.asignado_a', '=', 'users.id')
-            ->selectRaw('users.nombres as tecnico_nombre, count(*) as total')
+            ->selectRaw('users.nombres as tecnico_nombres, users.apellidos as tecnico_apellidos, count(*) as total')
             ->whereNotNull('tickets.asignado_a')
-            ->groupBy('users.nombres')
-            ->pluck('total', 'tecnico_nombre');
+            ->groupBy('users.nombres', 'users.apellidos')
+            ->get()
+            ->mapWithKeys(fn ($r) => [
+                trim($r->tecnico_nombres . ' ' . $r->tecnico_apellidos) => (int) $r->total,
+            ]);
 
         return response()->json([
             'total' => $all,
@@ -174,43 +190,45 @@ class TicketController extends Controller
                 }
             }
 
-            return Ticket::create($data);
+            $ticket = Ticket::create($data);
+
+            TicketHistorial::create([
+                'ticket_id' => $ticket->id,
+                'usuario_id' => $request->user()->id,
+                'tipo_cambio' => 'creacion',
+                'valor_nuevo' => $numero,
+                'comentario' => 'Ticket creado',
+            ]);
+
+            $admin = $request->user();
+            GeneralAudit::create([
+                'user_id' => $admin->id,
+                'rol' => AuditHelper::getRolDisplay($admin),
+                'area' => $admin->areaInstitucional->nombre ?? $admin->area->nombre ?? null,
+                'accion' => 'creacion_ticket',
+                'modelo' => 'Ticket',
+                'modelo_id' => $ticket->id,
+                'descripcion' => "Ticket {$numero} creado: {$ticket->titulo}",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            $tecnico = Tecnico::where('user_id', $admin->id)->first();
+            if ($tecnico) {
+                TecnicoHistorial::registrar(
+                    $tecnico,
+                    'creacion_ticket',
+                    "Ticket {$numero} creado: {$ticket->titulo}",
+                    $ticket->id,
+                    'Ticket',
+                    $ticket->id,
+                    $request->ip(),
+                    $request->userAgent()
+                );
+            }
+
+            return $ticket;
         });
-
-        TicketHistorial::create([
-            'ticket_id' => $ticket->id,
-            'usuario_id' => $request->user()->id,
-            'tipo_cambio' => 'creacion',
-            'valor_nuevo' => $numero,
-            'comentario' => 'Ticket creado',
-        ]);
-
-        $admin = $request->user();
-        GeneralAudit::create([
-            'user_id' => $admin->id,
-            'rol' => AuditHelper::getRolDisplay($admin),
-            'area' => $admin->areaInstitucional->nombre ?? $admin->area->nombre ?? null,
-            'accion' => 'creacion_ticket',
-            'modelo' => 'Ticket',
-            'modelo_id' => $ticket->id,
-            'descripcion' => "Ticket {$numero} creado: {$ticket->titulo}",
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        $tecnico = Tecnico::where('user_id', $admin->id)->first();
-        if ($tecnico) {
-            TecnicoHistorial::registrar(
-                $tecnico,
-                'creacion_ticket',
-                "Ticket {$numero} creado: {$ticket->titulo}",
-                $ticket->id,
-                'Ticket',
-                $ticket->id,
-                $request->ip(),
-                $request->userAgent()
-            );
-        }
 
         $ticket->load(['area', 'createdBy', 'assignedTo']);
 
@@ -230,33 +248,43 @@ class TicketController extends Controller
         $ticket = Ticket::findOrFail($id);
         $changes = $request->validated();
 
+        $cambiosDetectados = [];
         foreach ($changes as $campo => $valor) {
-            if ($ticket->$campo !== $valor) {
+            if ((string) $ticket->$campo !== (string) $valor) {
+                $cambiosDetectados[$campo] = [
+                    'anterior' => (string) $ticket->$campo,
+                    'nuevo' => (string) $valor,
+                ];
+            }
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($ticket, $changes, $cambiosDetectados, $request) {
+            $ticket->update($changes);
+
+            foreach ($cambiosDetectados as $campo => $vals) {
                 TicketHistorial::create([
                     'ticket_id' => $ticket->id,
                     'usuario_id' => $request->user()->id,
                     'tipo_cambio' => 'actualizacion',
-                    'valor_anterior' => (string) $ticket->$campo,
-                    'valor_nuevo' => (string) $valor,
+                    'valor_anterior' => $vals['anterior'],
+                    'valor_nuevo' => $vals['nuevo'],
                     'comentario' => "Campo {$campo} actualizado",
                 ]);
             }
-        }
 
-        $ticket->update($changes);
-
-        $admin = $request->user();
-        GeneralAudit::create([
-            'user_id' => $admin->id,
-            'rol' => AuditHelper::getRolDisplay($admin),
-            'area' => $admin->areaInstitucional->nombre ?? $admin->area->nombre ?? null,
-            'accion' => 'edicion_ticket',
-            'modelo' => 'Ticket',
-            'modelo_id' => $ticket->id,
-            'descripcion' => "Ticket {$ticket->numero} actualizado",
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+            $admin = $request->user();
+            GeneralAudit::create([
+                'user_id' => $admin->id,
+                'rol' => AuditHelper::getRolDisplay($admin),
+                'area' => $admin->areaInstitucional->nombre ?? $admin->area->nombre ?? null,
+                'accion' => 'edicion_ticket',
+                'modelo' => 'Ticket',
+                'modelo_id' => $ticket->id,
+                'descripcion' => "Ticket {$ticket->numero} actualizado",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        });
 
         $ticket->load(['area', 'createdBy', 'assignedTo']);
 

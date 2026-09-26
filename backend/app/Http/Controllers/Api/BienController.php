@@ -8,22 +8,39 @@ use App\Models\BienEspecificacion;
 use App\Models\BienHistorial;
 use App\Models\MantenimientoBien;
 use App\Models\Tecnico;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class BienController extends Controller
 {
+    /**
+     * Áreas visibles para una usuaria de área: sus designaciones activas
+     * y, si es cuenta institucional (sin designación), su área por correo.
+     */
+    private function areaIdsUsuario(User $user): array
+    {
+        $areaIds = $user->asignaciones()
+            ->where('estado_asignacion', 'activo')
+            ->pluck('area_id');
+
+        if ($user->areaInstitucional) {
+            $areaIds->push($user->areaInstitucional->id);
+        }
+
+        return $areaIds->unique()->values()->all();
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
         $rol = $user->rol->nombre;
 
-        $query = Bien::with(['area', 'tipoBien', 'especificaciones']);
+        $query = Bien::with(['area', 'tipoBien', 'especificaciones', 'sede']);
 
         if ($rol === 'Area Usuaria') {
-            $areaIds = $user->asignaciones()->where('estado_asignacion', 'activo')->pluck('area_id');
-            $query->whereIn('bienes.area_id', $areaIds);
+            $query->whereIn('bienes.area_id', $this->areaIdsUsuario($user));
         }
 
         if ($request->filled('search')) {
@@ -36,6 +53,9 @@ class BienController extends Controller
                   ->orWhere('codigo_patrimonial', 'like', "%{$search}%")
                   ->orWhere('ubicacion', 'like', "%{$search}%")
                   ->orWhereHas('tipoBien', function ($q2) use ($search) {
+                      $q2->where('nombre', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('sede', function ($q2) use ($search) {
                       $q2->where('nombre', 'like', "%{$search}%");
                   });
             });
@@ -53,8 +73,16 @@ class BienController extends Controller
             $query->where('bienes.area_id', $request->area_id);
         }
 
+        if ($request->filled('sede_id')) {
+            $query->where('bienes.sede_id', $request->sede_id);
+        }
+
+        $perPage = (int) $request->get('per_page', 15);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 15;
+        }
         $bienes = $query->orderBy('bienes.created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate($perPage);
 
         $bienes->getCollection()->transform(function ($bien) {
             $area = $bien->area;
@@ -80,6 +108,7 @@ class BienController extends Controller
         $request->validate([
             'tipo_bien_id' => 'required|exists:tipo_bienes,id',
             'area_id' => 'required|exists:areas,id',
+            'sede_id' => 'required|exists:sedes,id',
             'estado' => 'required|in:operativo,mantenimiento,programado,inactivo,baja',
             'marca' => 'nullable|string|max:255',
             'modelo' => 'nullable|string|max:255',
@@ -92,14 +121,17 @@ class BienController extends Controller
             'especificaciones.*.valor' => 'nullable|string|max:500',
         ]);
 
-        $codigo = $this->generarCodigo($request->tipo_bien_id, $request->area_id);
+        $codigo = null;
 
         DB::beginTransaction();
         try {
+            $codigo = $this->generarCodigo($request->tipo_bien_id, $request->area_id);
+
             $bien = Bien::create([
                 'codigo' => $codigo,
                 'tipo_bien_id' => $request->tipo_bien_id,
                 'area_id' => $request->area_id,
+                'sede_id' => $request->sede_id,
                 'estado' => $request->estado,
                 'marca' => $request->marca,
                 'modelo' => $request->modelo,
@@ -124,7 +156,7 @@ class BienController extends Controller
 
             return response()->json([
                 'message' => 'Bien registrado correctamente',
-                'data' => $bien->load(['area', 'tipoBien', 'especificaciones']),
+                'data' => $bien->load(['area', 'sede', 'tipoBien', 'especificaciones']),
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -138,7 +170,7 @@ class BienController extends Controller
             return response()->json(['message' => 'ID inválido'], 404);
         }
 
-        $bien = Bien::with(['area', 'tipoBien', 'especificaciones', 'mantenimientos.tecnico', 'historial'])
+        $bien = Bien::with(['area', 'sede', 'tipoBien', 'especificaciones', 'mantenimientos.tecnico', 'historial'])
             ->findOrFail($id);
 
         $area = $bien->area;
@@ -167,6 +199,7 @@ class BienController extends Controller
         $request->validate([
             'tipo_bien_id' => 'sometimes|exists:tipo_bienes,id',
             'area_id' => 'sometimes|exists:areas,id',
+            'sede_id' => 'sometimes|nullable|exists:sedes,id',
             'estado' => 'sometimes|in:operativo,mantenimiento,programado,inactivo,baja',
             'marca' => 'nullable|string|max:255',
             'modelo' => 'nullable|string|max:255',
@@ -184,7 +217,7 @@ class BienController extends Controller
             $antes = $bien->only(['estado', 'marca', 'modelo', 'numero_serie', 'codigo_patrimonial', 'ubicacion', 'observaciones']);
 
             $bien->update($request->only([
-                'tipo_bien_id', 'area_id', 'estado', 'marca', 'modelo',
+                'tipo_bien_id', 'area_id', 'sede_id', 'estado', 'marca', 'modelo',
                 'numero_serie', 'codigo_patrimonial', 'ubicacion', 'observaciones',
             ]));
 
@@ -201,7 +234,7 @@ class BienController extends Controller
                 $this->registrarHistorial($bien, 'actualizacion', implode(', ', $cambios));
             }
 
-            if ($request->has('especificaciones')) {
+            if ($request->filled('especificaciones')) {
                 $bien->especificaciones()->delete();
                 foreach ($request->especificaciones as $esp) {
                     $bien->especificaciones()->create([
@@ -241,8 +274,7 @@ class BienController extends Controller
         }]);
 
         if ($rol === 'Area Usuaria') {
-            $areaIds = $user->asignaciones()->where('estado_asignacion', 'activo')->pluck('area_id');
-            $areasQuery->whereIn('areas.id', $areaIds);
+            $areasQuery->whereIn('areas.id', $this->areaIdsUsuario($user));
         }
 
         if ($request->filled('area_id')) {
@@ -321,8 +353,7 @@ class BienController extends Controller
         $query = Bien::query();
 
         if ($rol === 'Area Usuaria') {
-            $areaIds = $user->asignaciones()->where('estado_asignacion', 'activo')->pluck('area_id');
-            $query->whereIn('bienes.area_id', $areaIds);
+            $query->whereIn('bienes.area_id', $this->areaIdsUsuario($user));
         }
 
         if ($request->filled('estado')) {
@@ -464,10 +495,21 @@ class BienController extends Controller
             $prefijoArea = substr($prefijoArea, 0, 4);
         }
 
-        $ultimoNumero = DB::table('bienes')
-            ->where('codigo', 'like', "EQP-{$prefijoArea}-%")
-            ->orWhere('codigo', 'like', "{$prefijoTipo}-{$prefijoArea}-%")
-            ->count();
+        $ultimoNumero = 0;
+        $codigos = DB::table('bienes')
+            ->where(function ($q) use ($prefijoArea, $prefijoTipo) {
+                $q->where('codigo', 'like', "EQP-{$prefijoArea}-%")
+                  ->orWhere('codigo', 'like', "{$prefijoTipo}-{$prefijoArea}-%");
+            })
+            ->pluck('codigo');
+
+        foreach ($codigos as $codigoExistente) {
+            $partes = explode('-', $codigoExistente);
+            $n = (int) end($partes);
+            if ($n > $ultimoNumero) {
+                $ultimoNumero = $n;
+            }
+        }
 
         $numero = str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
 

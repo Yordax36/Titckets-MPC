@@ -76,13 +76,19 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
     if (!ticketId) return
     setLoading(true)
     try {
-      const [ticketRes, respuestasRes, historialRes, tecnicosRes] = await Promise.all([
-        getTicket(ticketId), getRespuestas(ticketId), historial(ticketId), getAllTecnicos(),
+      const [ticketRes, respuestasRes, historialRes] = await Promise.all([
+        getTicket(ticketId), getRespuestas(ticketId), historial(ticketId),
       ])
       setTicket(ticketRes.data)
       setRespuestas(respuestasRes.data || [])
       setHistorialData(historialRes.data || [])
-      setTecnicos(tecnicosRes.data || [])
+      if (hasPermission(PERMISOS.ASIGNAR_TECNICO)) {
+        getAllTecnicos()
+          .then((tecnicosRes) => setTecnicos(tecnicosRes.data || []))
+          .catch(() => setTecnicos([]))
+      } else {
+        setTecnicos([])
+      }
     } catch { toast.error('Error al cargar ticket') }
     finally { setLoading(false) }
   }
@@ -235,8 +241,9 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
               </div>
 
               {/* Action Bar */}
-              {ticket.estado !== 'cerrado' && ticket.estado !== 'cancelado' && (
+              {ticket.estado !== 'cerrado' && ticket.estado !== 'cancelado' && (hasPermission(PERMISOS.ASIGNAR_TECNICO) || hasPermission(PERMISOS.CAMBIAR_ESTADO)) && (
                 <div className="flex items-center gap-2 px-6 py-3 border-b border-gray-50 flex-shrink-0">
+                  {hasPermission(PERMISOS.ASIGNAR_TECNICO) && (
                   <div className="relative">
                     <button onClick={() => { setShowAsignar(!showAsignar); setShowEstado(false); setShowMasAcciones(false) }} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                       <UserPlus className="h-3.5 w-3.5" /> Asignar
@@ -254,6 +261,8 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
                       </div>
                     )}
                   </div>
+                  )}
+                  {hasPermission(PERMISOS.CAMBIAR_ESTADO) && (
                   <div className="relative">
                     <button onClick={() => { setShowEstado(!showEstado); setShowAsignar(false); setShowMasAcciones(false) }} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                       <RefreshCw className="h-3.5 w-3.5" /> Cambiar estado
@@ -269,6 +278,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
                       </div>
                     )}
                   </div>
+                  )}
                   <div className="relative">
                     <button onClick={() => { setShowMasAcciones(!showMasAcciones); setShowAsignar(false); setShowEstado(false) }} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                       <MoreHorizontal className="h-3.5 w-3.5" /> Más acciones

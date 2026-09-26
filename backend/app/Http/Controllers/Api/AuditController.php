@@ -13,23 +13,23 @@ class AuditController extends Controller
     {
         $query = GeneralAudit::with('user');
 
-        if ($request->has('user_id')) {
+        if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
 
-        if ($request->has('accion')) {
+        if ($request->filled('accion')) {
             $query->where('accion', $request->accion);
         }
 
-        if ($request->has('modelo')) {
+        if ($request->filled('modelo')) {
             $query->where('modelo', $request->modelo);
         }
 
-        if ($request->has('modelo_id')) {
+        if ($request->filled('modelo_id')) {
             $query->where('modelo_id', $request->modelo_id);
         }
 
-        if ($request->has('area_id')) {
+        if ($request->filled('area_id')) {
             $areaId = $request->area_id;
             $area = \App\Models\Area::find($areaId);
             $userIdsInArea = \App\Models\AreaUsuario::where('area_id', $areaId)
@@ -53,7 +53,7 @@ class AuditController extends Controller
             });
         }
 
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('descripcion', 'like', "%{$search}%")
@@ -61,11 +61,17 @@ class AuditController extends Controller
             });
         }
 
-        if ($request->has('fecha_desde')) {
+        if ($request->filled('fecha_desde')) {
+            if (!\Carbon\Carbon::hasFormat($request->fecha_desde, 'Y-m-d')) {
+                return response()->json(['message' => 'fecha_desde debe tener formato Y-m-d'], 422);
+            }
             $query->whereDate('created_at', '>=', $request->fecha_desde);
         }
 
-        if ($request->has('fecha_hasta')) {
+        if ($request->filled('fecha_hasta')) {
+            if (!\Carbon\Carbon::hasFormat($request->fecha_hasta, 'Y-m-d')) {
+                return response()->json(['message' => 'fecha_hasta debe tener formato Y-m-d'], 422);
+            }
             $query->whereDate('created_at', '<=', $request->fecha_hasta);
         }
 

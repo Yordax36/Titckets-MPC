@@ -40,7 +40,11 @@ class UsuarioController extends Controller
             $query->where('estado', $request->estado);
         }
 
-        $usuarios = $query->orderBy('nombres')->paginate($request->get('per_page', 15));
+        $perPage = (int) $request->get('per_page', 15);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 15;
+        }
+        $usuarios = $query->orderBy('nombres')->paginate($perPage);
 
         return response()->json($usuarios);
     }
@@ -240,11 +244,27 @@ class UsuarioController extends Controller
             ], 400);
         }
 
-        $usuario->asignaciones()->update(['activo' => false]);
+        $referencias = \App\Models\Ticket::where('creado_por', $usuario->id)->count()
+            + \App\Models\Ticket::where('asignado_a', $usuario->id)->count()
+            + \App\Models\TicketHistorial::where('usuario_id', $usuario->id)->count()
+            + \App\Models\TicketRespuesta::where('usuario_id', $usuario->id)->count()
+            + \App\Models\TicketEvidencia::where('usuario_id', $usuario->id)->count();
 
-        if ($usuario->foto && file_exists(public_path($usuario->foto))) {
-            unlink(public_path($usuario->foto));
+        if ($referencias > 0) {
+            return response()->json([
+                'message' => 'No se puede eliminar un usuario con tickets o historial asociado. Desactívalo en su lugar.',
+            ], 400);
         }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($usuario) {
+            $usuario->asignaciones()->delete();
+
+            if ($usuario->foto && file_exists(public_path($usuario->foto))) {
+                unlink(public_path($usuario->foto));
+            }
+
+            $usuario->delete();
+        });
 
         GeneralAudit::create([
             'user_id' => Auth::id(),
@@ -257,8 +277,6 @@ class UsuarioController extends Controller
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
-
-        $usuario->delete();
 
         return response()->json(['message' => 'Usuario eliminado correctamente']);
     }

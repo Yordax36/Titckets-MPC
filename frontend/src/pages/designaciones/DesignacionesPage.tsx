@@ -79,7 +79,11 @@ export default function DesignacionesPage() {
 
   const loadFormData = async (excludeDesignacionId?: number) => {
     try {
-      const [a, u, c] = await Promise.all([getAreasDisponibles(), getUsuariosDisponibles(), getCargosDisponibles(excludeDesignacionId)]);
+      const [a, u, c] = await Promise.all([
+        getAreasDisponibles(),
+        getUsuariosDisponibles(excludeDesignacionId),
+        getCargosDisponibles(excludeDesignacionId),
+      ]);
       setAreas(a); setUsuarios(u); setCargos(c);
     } catch (e) { toast.error(getErrorMessage(e)); }
   };
@@ -248,8 +252,10 @@ export default function DesignacionesPage() {
                     {d.fecha_inicio ? formatLocalDate(d.fecha_inicio, 'es-PE', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                   </td>
                   <td className="px-6 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700">
-                      Activo
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                      d.estado_asignacion === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {d.estado_asignacion === 'activo' ? 'Activo' : 'Finalizado'}
                     </span>
                   </td>
                   <td className="px-6 py-3">
@@ -362,17 +368,22 @@ export default function DesignacionesPage() {
                       <span className="text-sm font-semibold text-gray-700">Cargo</span>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
-                      {cargos.map(c => (
-                        <button key={c.id} onClick={() => { setSelectedCargo(c); setStep(4); }}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                            selectedCargo?.id === c.id ? 'bg-purple-100 text-purple-700 font-medium' : 'hover:bg-gray-100 text-gray-700'
-                          }`}>
-                          <div className="flex items-center gap-2">
-                            <Briefcase className="h-4 w-4 text-gray-400" />
-                            {c.nombre}
-                          </div>
-                        </button>
-                      ))}
+                      {cargos.map(c => {
+                        const ocupado = !!c.unico && c.disponible === false;
+                        return (
+                          <button key={c.id} onClick={() => { if (ocupado) return; setSelectedCargo(c); setStep(4); }}
+                            disabled={ocupado}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                              ocupado ? 'opacity-50 cursor-not-allowed text-gray-400' :
+                              selectedCargo?.id === c.id ? 'bg-purple-100 text-purple-700 font-medium' : 'hover:bg-gray-100 text-gray-700'
+                            }`}>
+                            <div className="flex items-center gap-2">
+                              <Briefcase className="h-4 w-4 text-gray-400" />
+                              {c.nombre}{ocupado ? ' (en uso)' : ''}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </>
                 )}

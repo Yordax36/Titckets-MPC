@@ -201,8 +201,12 @@ export default function BienDetailPage() {
               <MapPin className="h-4 w-4 text-gray-500" />
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-0.5">Ubicación</p>
-              <p className="text-sm font-semibold text-gray-900">{bien.ubicacion || 'No especificada'}</p>
+              <p className="text-xs text-gray-400 mb-0.5">Sede</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {bien.sede?.nombre
+                  ? `${bien.sede.nombre}${bien.ubicacion ? ` · ${bien.ubicacion}` : ''}`
+                  : (bien.ubicacion || 'No especificada')}
+              </p>
             </div>
           </div>
         </div>
@@ -255,7 +259,9 @@ export default function BienDetailPage() {
                     { label: 'Número de Serie', value: bien.numero_serie || '-' },
                     { label: 'Fecha de Registro', value: new Date(bien.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }) },
                     { label: 'Código Patrimonial', value: bien.codigo_patrimonial || '-' },
-                    { label: 'Ubicación', value: bien.ubicacion || '-' },
+                    { label: 'Sede', value: bien.sede?.nombre
+                      ? `${bien.sede.nombre}${bien.ubicacion ? ` · ${bien.ubicacion}` : ''}`
+                      : (bien.ubicacion || '-') },
                   ].map(item => (
                     <div key={item.label} className="flex items-center px-4 py-3 bg-white hover:bg-gray-50 transition-colors">
                       <span className="text-sm text-gray-500 w-48 flex-shrink-0">{item.label}</span>

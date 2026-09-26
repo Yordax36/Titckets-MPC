@@ -13,6 +13,10 @@ const accionLabels: Record<string, string> = {
   inicio_sesion: 'Inicio de sesión',
   cierre_sesion: 'Cierre de sesión',
   intento_fallido: 'Intento fallido',
+  crear: 'Creación',
+  actualizar: 'Edición',
+  eliminar: 'Eliminación',
+  finalizar: 'Finalización',
   creacion_usuario: 'Creación de usuario',
   edicion_usuario: 'Edición de usuario',
   creacion_area: 'Creación de área',
@@ -24,12 +28,17 @@ const accionLabels: Record<string, string> = {
   cambio_jefe: 'Cambio de responsable',
   activacion: 'Activación',
   desactivacion: 'Desactivación',
+  obtenerDatosDni: 'Consulta DNI',
 }
 
 const accionVariants: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info'> = {
   inicio_sesion: 'success',
   cierre_sesion: 'default',
   intento_fallido: 'danger',
+  crear: 'info',
+  actualizar: 'warning',
+  eliminar: 'danger',
+  finalizar: 'warning',
   creacion_usuario: 'info',
   edicion_usuario: 'warning',
   creacion_area: 'info',
@@ -41,6 +50,7 @@ const accionVariants: Record<string, 'default' | 'success' | 'warning' | 'danger
   cambio_jefe: 'warning',
   activacion: 'success',
   desactivacion: 'danger',
+  obtenerDatosDni: 'default',
 }
 
 export default function AuditPage() {
@@ -74,9 +84,12 @@ export default function AuditPage() {
         <CardBody>
           <div className="flex gap-4">
             <div className="flex-1">
-              <SearchInput value={search} onChange={setSearch} placeholder="Buscar en auditoría..." />
+              <SearchInput
+                value={search}
+                onChange={(v) => { setSearch(v); setPage(1); }}
+                placeholder="Buscar en auditoría..."
+              />
             </div>
-            <button onClick={() => { setPage(1); loadData() }} className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Buscar</button>
           </div>
         </CardBody>
       </Card>
@@ -87,6 +100,7 @@ export default function AuditPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Fecha/Hora</TableHead>
+                <TableHead>Rol</TableHead>
                 <TableHead>Área</TableHead>
                 <TableHead>Acción</TableHead>
                 <TableHead>Descripción</TableHead>
@@ -100,6 +114,7 @@ export default function AuditPage() {
                 <TableRow key={a.id}>
                   <TableCell className="text-sm whitespace-nowrap">{formatDateTime(a.created_at)}</TableCell>
                   <TableCell><Badge variant="default">{a.rol || '-'}</Badge></TableCell>
+                  <TableCell className="max-w-[160px] truncate text-sm text-gray-600 dark:text-gray-400">{a.area || '-'}</TableCell>
                   <TableCell><Badge variant={accionVariants[a.accion] || 'default'}>{accionLabels[a.accion] || a.accion}</Badge></TableCell>
                   <TableCell className="max-w-xs truncate text-sm text-gray-600 dark:text-gray-400">{a.descripcion || '-'}</TableCell>
                   <TableCell className="text-sm text-gray-500">{a.ip_address || '-'}</TableCell>

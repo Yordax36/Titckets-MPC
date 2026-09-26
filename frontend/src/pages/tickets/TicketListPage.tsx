@@ -83,17 +83,24 @@ export default function TicketListPage() {
       setTickets(ticketsRes.data.data || [])
       setTotalPages(ticketsRes.data.last_page || 1)
       setTotalRecords(ticketsRes.data.total || 0)
-    } catch {} finally { setLoading(false) }
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally { setLoading(false) }
   }, [page, perPage, sortField, sortDir, search, estado, categoria, asignadoA, areaId, fechaDesde, fechaHasta])
 
   useEffect(() => { loadData() }, [loadData])
 
   const loadFilterData = async () => {
-    try {
-      const [areasRes, usuariosRes] = await Promise.all([getAreas({ per_page: 100 }), getUsuarios({ per_page: 100 })])
-      setAreas(areasRes.data.data || [])
-      setUsuarios(usuariosRes.data.data || [])
-    } catch {}
+    const [areasRes, usuariosRes] = await Promise.allSettled([
+      getAreas({ per_page: 100 }),
+      getUsuarios({ per_page: 100 }),
+    ])
+    if (areasRes.status === 'fulfilled') {
+      setAreas(areasRes.value.data.data || [])
+    }
+    if (usuariosRes.status === 'fulfilled') {
+      setUsuarios(usuariosRes.value.data.data || [])
+    }
   }
 
   const handleSort = (field: SortField) => {
@@ -135,13 +142,19 @@ export default function TicketListPage() {
       const ticketId = res.data?.id
 
       if (ticketId && data.files.length > 0) {
+        let fallidos = 0
         for (const file of data.files) {
           const fd = new FormData()
           fd.append('evidencia', file)
           fd.append('descripcion', '')
           try {
             await uploadEvidencia(ticketId, fd)
-          } catch {}
+          } catch {
+            fallidos++
+          }
+        }
+        if (fallidos > 0) {
+          toast.error(`${fallidos} archivo(s) de evidencia no se pudieron subir (solo JPG, JPEG, PNG, WEBP hasta 5MB)`)
         }
       }
 

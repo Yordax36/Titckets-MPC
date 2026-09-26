@@ -86,10 +86,6 @@ export default function UsuarioListPage() {
     }
   };
 
-  useEffect(() => {
-    loadUsuarios();
-  }, []);
-
   const loadUsuarios = async () => {
     setLoading(true);
     try {

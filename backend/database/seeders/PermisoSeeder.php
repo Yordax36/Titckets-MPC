@@ -24,6 +24,12 @@ class PermisoSeeder extends Seeder
             ['nombre' => 'eliminar_area', 'modulo' => 'areas', 'created_at' => $now, 'updated_at' => $now],
             ['nombre' => 'ver_areas',     'modulo' => 'areas', 'created_at' => $now, 'updated_at' => $now],
 
+            // Modulo: Sedes
+            ['nombre' => 'ver_sedes',     'modulo' => 'sedes', 'created_at' => $now, 'updated_at' => $now],
+            ['nombre' => 'crear_sede',    'modulo' => 'sedes', 'created_at' => $now, 'updated_at' => $now],
+            ['nombre' => 'editar_sede',   'modulo' => 'sedes', 'created_at' => $now, 'updated_at' => $now],
+            ['nombre' => 'eliminar_sede', 'modulo' => 'sedes', 'created_at' => $now, 'updated_at' => $now],
+
             // Modulo: Tickets
             ['nombre' => 'ver_todos_los_tickets', 'modulo' => 'tickets', 'created_at' => $now, 'updated_at' => $now],
             ['nombre' => 'ver_tickets_asignados', 'modulo' => 'tickets', 'created_at' => $now, 'updated_at' => $now],

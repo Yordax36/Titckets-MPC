@@ -15,12 +15,15 @@ import TicketEvidenciaGallery from '../../components/tickets/TicketEvidenciaGall
 import { formatDateTime } from '../../utils/formatters'
 import { ESTADOS_TICKET, CATEGORIAS, ESTADO_DOT_COLOR } from '../../utils/constants'
 import useAuth from '../../hooks/useAuth'
+import usePermission from '../../hooks/usePermission'
+import { PERMISOS } from '../../utils/permissions'
 import { ArrowLeft, User, Building2, Tag, Clock, MessageSquare, Camera, History } from 'lucide-react'
 
 export default function TicketDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { hasPermission } = usePermission()
   const [ticket, setTicket] = useState<any>(null)
   const [respuestas, setRespuestas] = useState<any[]>([])
   const [historialData, setHistorialData] = useState<any[]>([])
@@ -36,16 +39,24 @@ export default function TicketDetailPage() {
     setLoading(true)
     try {
       const ticketId = Number(id)
-      const [ticketRes, respuestasRes, historialRes, tecnicosRes] = await Promise.all([
+      const [ticketRes, respuestasRes, historialRes] = await Promise.all([
         getTicket(ticketId),
         getRespuestas(ticketId),
         historial(ticketId),
-        getAllTecnicos(),
       ])
       setTicket(ticketRes.data)
       setRespuestas(respuestasRes.data || [])
       setHistorialData(historialRes.data || [])
-      setTecnicos(tecnicosRes.data || [])
+      if (hasPermission(PERMISOS.ASIGNAR_TECNICO)) {
+        try {
+          const tecnicosRes = await getAllTecnicos()
+          setTecnicos(tecnicosRes.data || [])
+        } catch {
+          setTecnicos([])
+        }
+      } else {
+        setTecnicos([])
+      }
     } catch (e) {
       toast.error(getErrorMessage(e))
     } finally {
@@ -215,19 +226,22 @@ export default function TicketDetailPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Actions */}
-          {ticket.estado !== 'cerrado' && ticket.estado !== 'cancelado' && (
+          {ticket.estado !== 'cerrado' && ticket.estado !== 'cancelado' &&
+            (hasPermission(PERMISOS.CAMBIAR_ESTADO) || hasPermission(PERMISOS.ASIGNAR_TECNICO)) && (
             <Card>
               <CardBody>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Acciones</h3>
                 <div className="space-y-3">
-                  <Select
-                    label="Cambiar Estado"
-                    value=""
-                    onChange={(e) => handleCambiarEstado(e.target.value)}
-                    options={getNextStates(ticket.estado).map((s) => ({ value: s, label: ESTADOS_TICKET[s] }))}
-                    placeholder="Seleccionar estado"
-                  />
-                  {!ticket.asignado_a && (
+                  {hasPermission(PERMISOS.CAMBIAR_ESTADO) && (
+                    <Select
+                      label="Cambiar Estado"
+                      value=""
+                      onChange={(e) => handleCambiarEstado(e.target.value)}
+                      options={getNextStates(ticket.estado).map((s) => ({ value: s, label: ESTADOS_TICKET[s] }))}
+                      placeholder="Seleccionar estado"
+                    />
+                  )}
+                  {hasPermission(PERMISOS.ASIGNAR_TECNICO) && !ticket.asignado_a && (
                     <Select
                       label="Asignar Técnico"
                       value=""

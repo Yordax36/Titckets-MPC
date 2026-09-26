@@ -93,7 +93,6 @@ class AreaEncargadoSeeder extends Seeder
                     'cargo' => $cargo->nombre,
                     'tipo_designacion' => 'Encargado',
                     'usuario_designador_id' => 1,
-                    'observaciones' => 'Asignado como encargado desde AreaEncargadoSeeder',
                     'fecha_asignacion' => now(),
                     'fecha_inicio' => now(),
                     'activo' => true,

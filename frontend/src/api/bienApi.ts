@@ -41,6 +41,7 @@ export interface Bien {
   codigo: string;
   tipo_bien_id: number;
   area_id: number;
+  sede_id: number | null;
   estado: string;
   marca: string | null;
   modelo: string | null;
@@ -49,6 +50,7 @@ export interface Bien {
   ubicacion: string | null;
   observaciones: string | null;
   area?: { id: number; nombre: string };
+  sede?: { id: number; nombre: string } | null;
   tipoBien?: TipoBien;
   especificaciones: BienEspecificacion[];
   mantenimientos?: Mantenimiento[];

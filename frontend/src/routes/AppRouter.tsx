@@ -10,6 +10,7 @@ import TicketDetailPage from '../pages/tickets/TicketDetailPage'
 import UsuarioListPage from '../pages/usuarios/UsuarioListPage'
 import TecnicosPage from '../pages/tecnicos/TecnicosPage'
 import AreaListPage from '../pages/areas/AreaListPage'
+import SedesPage from '../pages/sedes/SedesPage'
 import CargosPage from '../pages/cargos/CargosPage'
 import DesignacionesPage from '../pages/designaciones/DesignacionesPage'
 import BienesPage from '../pages/bienes/BienesPage'
@@ -52,6 +53,9 @@ export default function AppRouter() {
           </Route>
           <Route element={<PermissionRoute permission="ver_areas" />}>
             <Route path="/areas" element={<AreaListPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="ver_sedes" />}>
+            <Route path="/sedes" element={<SedesPage />} />
           </Route>
           <Route element={<PermissionRoute permission="ver_cargos" />}>
             <Route path="/cargos" element={<CargosPage />} />

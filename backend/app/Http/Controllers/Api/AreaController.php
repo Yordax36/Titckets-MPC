@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\GeneralAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AreaController extends Controller
@@ -33,7 +34,11 @@ class AreaController extends Controller
             });
         }
 
-        $areas = $query->orderBy('nombre')->paginate($request->get('per_page', 100));
+        $perPage = (int) $request->get('per_page', 100);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 100;
+        }
+        $areas = $query->orderBy('nombre')->paginate($perPage);
 
         return response()->json($areas);
     }
@@ -65,30 +70,40 @@ class AreaController extends Controller
             'estado' => 'nullable|in:activo,inactivo',
         ]);
 
-        $area = Area::create([
-            'nombre' => $request->nombre,
-            'correo' => strtolower($request->correo),
-            'password_correo' => $request->password_correo,
-            'descripcion' => $request->descripcion,
-            'estado' => $request->estado ?? 'activo',
-        ]);
+        $correo = strtolower($request->correo);
 
         $rolArea = \App\Models\Role::where('nombre', 'Area Usuaria')->first();
+        if (!$rolArea) {
+            return response()->json(['message' => 'Rol Area Usuaria no encontrado'], 500);
+        }
 
-        if ($rolArea) {
+        if (User::whereRaw('LOWER(email) = LOWER(?)', [$correo])->exists()) {
+            return response()->json(['message' => 'El correo ya está en uso por otra cuenta'], 422);
+        }
+
+        $area = DB::transaction(function () use ($request, $correo, $rolArea) {
+            $area = Area::create([
+                'nombre' => $request->nombre,
+                'correo' => $correo,
+                'descripcion' => $request->descripcion,
+                'estado' => $request->estado ?? 'activo',
+            ]);
+
             User::create([
                 'nombres' => $area->nombre,
                 'apellidos' => '',
                 'name' => $area->nombre,
                 'email' => $area->correo,
                 'username' => $area->correo,
-                'password' => Hash::make('Area#' . $area->id),
+                'password' => Hash::make($request->password_correo),
                 'dni' => 'AREA-' . str_pad($area->id, 3, '0', STR_PAD_LEFT),
                 'cargo' => 'Área Institucional',
                 'rol_id' => $rolArea->id,
                 'estado' => 'activo',
             ]);
-        }
+
+            return $area;
+        });
 
         GeneralAudit::create([
             'user_id' => Auth::id(),
@@ -110,12 +125,16 @@ class AreaController extends Controller
 
     public function show($id)
     {
+        // Excluir usuarios pseudo "Área Institucional" (dni 900000xx) del historial y asignaciones
+        $soloPersonalReal = fn ($q) => $q->whereDoesntHave('usuario', fn ($qq) => $qq->where('cargo', 'Área Institucional'));
+
         $area = Area::with([
             'jefeActual.usuario',
             'tickets.createdBy',
             'tickets.assignedTo',
-            'historialResponsables.usuario',
+            'historialResponsables' => $soloPersonalReal,
             'historialResponsables.usuarioDesignador',
+            'asignaciones' => $soloPersonalReal,
             'asignaciones.usuario',
         ])->withCount('tickets')->findOrFail($id);
 
@@ -135,33 +154,62 @@ class AreaController extends Controller
         ]);
 
         $updateData = $request->only([
-            'nombre', 'correo', 'password_correo', 'descripcion', 'estado',
+            'nombre', 'correo', 'descripcion', 'estado',
         ]);
 
         if (isset($updateData['correo'])) {
             $updateData['correo'] = strtolower($updateData['correo']);
         }
 
-        $area->update($updateData);
+        if (isset($updateData['correo']) && $updateData['correo'] !== strtolower($area->correo)) {
+            if (User::whereRaw('LOWER(email) = LOWER(?)', [$updateData['correo']])->exists()) {
+                return response()->json(['message' => 'El correo ya está en uso por otra cuenta'], 422);
+            }
+        }
 
         $linkedUser = User::whereRaw('LOWER(email) = LOWER(?)', [$area->correo])
             ->orWhereRaw('LOWER(username) = LOWER(?)', [$area->correo])
             ->first();
 
-        if ($linkedUser) {
-            $updateData = ['nombres' => $area->nombre, 'name' => $area->nombre];
+        $nuevaPassword = $request->filled('password_correo') ? Hash::make($request->password_correo) : null;
+        $correoFinal = strtolower($updateData['correo'] ?? $area->correo);
 
-            if ($request->filled('correo') && strtolower($linkedUser->email) !== strtolower($request->correo)) {
-                $updateData['email'] = $request->correo;
-                $updateData['username'] = $request->correo;
+        DB::transaction(function () use ($area, $updateData, $linkedUser, $nuevaPassword, $correoFinal) {
+            $area->update($updateData);
+
+            if ($linkedUser) {
+                $userUpdate = ['nombres' => $area->nombre, 'name' => $area->nombre];
+
+                if (isset($updateData['correo']) && strtolower($linkedUser->email) !== $updateData['correo']) {
+                    $userUpdate['email'] = $updateData['correo'];
+                    $userUpdate['username'] = $updateData['correo'];
+                }
+
+                if ($nuevaPassword) {
+                    $userUpdate['password'] = $nuevaPassword;
+                }
+
+                $linkedUser->update($userUpdate);
+            } elseif ($nuevaPassword && $correoFinal) {
+                // El área no tiene cuenta institucional (ej. áreas sembradas sin usuario):
+                // crearla para que la contraseña de acceso permita iniciar sesión.
+                $rolArea = \App\Models\Role::where('nombre', 'Area Usuaria')->first();
+                if ($rolArea) {
+                    User::create([
+                        'nombres' => $area->nombre,
+                        'apellidos' => '',
+                        'name' => $area->nombre,
+                        'email' => $correoFinal,
+                        'username' => $correoFinal,
+                        'password' => $nuevaPassword,
+                        'dni' => 'AREA-' . str_pad($area->id, 3, '0', STR_PAD_LEFT),
+                        'cargo' => 'Área Institucional',
+                        'rol_id' => $rolArea->id,
+                        'estado' => 'activo',
+                    ]);
+                }
             }
-
-            if ($request->filled('password')) {
-                $updateData['password'] = Hash::make($request->password);
-            }
-
-            $linkedUser->update($updateData);
-        }
+        });
 
         GeneralAudit::create([
             'user_id' => Auth::id(),
@@ -191,15 +239,25 @@ class AreaController extends Controller
             ], 400);
         }
 
+        if ($area->bienes()->exists()) {
+            return response()->json([
+                'message' => 'No se puede eliminar el área porque tiene bienes asociados',
+            ], 400);
+        }
+
         $linkedUser = User::whereRaw('LOWER(email) = LOWER(?)', [$area->correo])
             ->orWhereRaw('LOWER(username) = LOWER(?)', [$area->correo])
             ->first();
 
-        if ($linkedUser) {
-            $linkedUser->delete();
-        }
+        DB::transaction(function () use ($area, $linkedUser) {
+            if ($linkedUser) {
+                $linkedUser->delete();
+            }
 
-        $area->asignaciones()->delete();
+            $area->asignaciones()->delete();
+
+            $area->delete();
+        });
 
         GeneralAudit::create([
             'user_id' => Auth::id(),
@@ -212,8 +270,6 @@ class AreaController extends Controller
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
-
-        $area->delete();
 
         return response()->json(['message' => 'Área eliminada correctamente']);
     }

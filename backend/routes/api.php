@@ -62,8 +62,16 @@ Route::prefix('v1')->group(function () {
         // Areas
         Route::get('areas/stats', [\App\Http\Controllers\Api\AreaController::class, 'stats'])
             ->middleware('permission:ver_areas');
-        Route::apiResource('areas', \App\Http\Controllers\Api\AreaController::class)
+        Route::get('areas', [\App\Http\Controllers\Api\AreaController::class, 'index'])
+            ->middleware('permission:ver_areas,ver_bienes');
+        Route::apiResource('areas', \App\Http\Controllers\Api\AreaController::class)->except(['index'])
             ->middleware('permission:ver_areas');
+
+        // Sedes
+        Route::get('sedes', [\App\Http\Controllers\Api\SedeController::class, 'index'])
+            ->middleware('permission:ver_sedes,ver_bienes');
+        Route::apiResource('sedes', \App\Http\Controllers\Api\SedeController::class)->except(['index'])
+            ->middleware('permission:ver_sedes');
 
         // Tecnicos de Mesa de Ayuda
         Route::get('tecnicos/all', [\App\Http\Controllers\Api\TecnicoController::class, 'all'])
@@ -83,9 +91,9 @@ Route::prefix('v1')->group(function () {
 
         // Tickets
         Route::get('tickets/stats', [\App\Http\Controllers\Api\TicketController::class, 'stats'])
-            ->middleware('permission:ver_mis_tickets,ver_todos_los_tickets');
+            ->middleware('permission:ver_mis_tickets,ver_todos_los_tickets,ver_tickets_asignados');
         Route::apiResource('tickets', \App\Http\Controllers\Api\TicketController::class)->except(['destroy'])
-            ->middleware('permission:ver_mis_tickets,ver_todos_los_tickets');
+            ->middleware('permission:ver_mis_tickets,ver_todos_los_tickets,ver_tickets_asignados');
         Route::put('tickets/{id}/estado', [\App\Http\Controllers\Api\TicketController::class, 'cambiarEstado'])
             ->middleware('permission:cambiar_estado');
         Route::put('tickets/{id}/asignar', [\App\Http\Controllers\Api\TicketController::class, 'asignarTecnico'])

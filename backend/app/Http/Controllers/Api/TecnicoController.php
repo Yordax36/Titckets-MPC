@@ -40,7 +40,11 @@ class TecnicoController extends Controller
             $query->where('estado', $request->estado);
         }
 
-        $tecnicos = $query->orderBy('codigo')->paginate($request->get('per_page', 100));
+        $perPage = (int) $request->get('per_page', 100);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 100;
+        }
+        $tecnicos = $query->orderBy('codigo')->paginate($perPage);
 
         return response()->json($tecnicos);
     }
@@ -96,6 +100,7 @@ class TecnicoController extends Controller
         $data = $request->validated();
 
         $tecnico->update([
+            'alias' => $data['alias'] ?? $tecnico->alias,
             'nombres' => $data['nombres'] ?? $tecnico->nombres,
             'apellidos' => $data['apellidos'] ?? $tecnico->apellidos,
             'estado' => $data['estado'] ?? $tecnico->estado,
@@ -106,6 +111,7 @@ class TecnicoController extends Controller
             if (isset($data['nombres'])) $userData['nombres'] = $data['nombres'];
             if (isset($data['apellidos'])) $userData['apellidos'] = $data['apellidos'];
             if (isset($data['email'])) $userData['email'] = $data['email'];
+            if (isset($data['alias'])) $userData['name'] = $data['alias'];
             if (isset($data['estado'])) $userData['estado'] = $data['estado'];
             if (!empty($data['password'])) $userData['password'] = Hash::make($data['password']);
 
@@ -124,20 +130,30 @@ class TecnicoController extends Controller
     {
         $tecnico = Tecnico::findOrFail($id);
 
-        $ticketsAbiertos = $tecnico->tickets()
-            ->whereIn('estado', ['pendiente', 'asignado', 'en_proceso', 'en_espera'])
-            ->count();
+        $userId = $tecnico->user_id;
 
-        if ($ticketsAbiertos > 0) {
-            return response()->json([
-                'message' => 'No se puede eliminar un técnico con tickets abiertos. Desactívalo en su lugar.',
-            ], 400);
+        if ($userId) {
+            $referencias = Ticket::where('creado_por', $userId)->count()
+                + Ticket::where('asignado_a', $userId)->count()
+                + \App\Models\TicketHistorial::where('usuario_id', $userId)->count()
+                + \App\Models\TicketRespuesta::where('usuario_id', $userId)->count()
+                + \App\Models\TicketEvidencia::where('usuario_id', $userId)->count();
+
+            if ($referencias > 0) {
+                return response()->json([
+                    'message' => 'No se puede eliminar un técnico con tickets o historial asociado. Desactívalo en su lugar.',
+                ], 400);
+            }
         }
 
-        if ($tecnico->user) {
-            $tecnico->user->delete();
+        if ($userId) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($tecnico, $userId) {
+                User::where('id', $userId)->delete();
+                $tecnico->delete();
+            });
+        } else {
+            $tecnico->delete();
         }
-        $tecnico->delete();
 
         return response()->json([
             'message' => 'Técnico eliminado correctamente',

@@ -12,6 +12,12 @@ export const PERMISOS = {
   ELIMINAR_AREA: 'eliminar_area',
   VER_AREAS: 'ver_areas',
 
+  // Sedes
+  VER_SEDES: 'ver_sedes',
+  CREAR_SEDE: 'crear_sede',
+  EDITAR_SEDE: 'editar_sede',
+  ELIMINAR_SEDE: 'eliminar_sede',
+
   // Tickets
   VER_TODOS_LOS_TICKETS: 'ver_todos_los_tickets',
   VER_TICKETS_ASIGNADOS: 'ver_tickets_asignados',

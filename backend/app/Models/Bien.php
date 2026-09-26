@@ -15,6 +15,7 @@ class Bien extends Model
         'codigo',
         'tipo_bien_id',
         'area_id',
+        'sede_id',
         'estado',
         'marca',
         'modelo',
@@ -32,6 +33,11 @@ class Bien extends Model
     public function area()
     {
         return $this->belongsTo(Area::class);
+    }
+
+    public function sede()
+    {
+        return $this->belongsTo(Sede::class, 'sede_id');
     }
 
     public function especificaciones()

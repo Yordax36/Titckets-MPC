@@ -56,7 +56,14 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
-        $user = Auth::user()->load(['areaInstitucional', 'area', 'areaActual.area', 'rol.permisos']);
+        $user = Auth::user();
+
+        if ($user->estado !== 'activo') {
+            auth()->logout();
+            return response()->json(['message' => 'Su cuenta está desactivada. Contacte al administrador.'], 403);
+        }
+
+        $user->load(['areaInstitucional', 'area', 'areaActual.area', 'rol.permisos']);
         $permissions = $user->rol?->permisos?->pluck('nombre')->toArray() ?? [];
 
         GeneralAudit::create([

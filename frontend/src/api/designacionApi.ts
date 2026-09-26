@@ -68,8 +68,10 @@ export const getAreasDisponibles = async () => {
   return response.data;
 };
 
-export const getUsuariosDisponibles = async () => {
-  const response = await api.get('/designaciones/disponibles/usuarios');
+export const getUsuariosDisponibles = async (excludeDesignacionId?: number) => {
+  const params: any = {};
+  if (excludeDesignacionId) params.exclude_designacion_id = excludeDesignacionId;
+  const response = await api.get('/designaciones/disponibles/usuarios', { params });
   return response.data;
 };
 

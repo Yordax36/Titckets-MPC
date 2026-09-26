@@ -24,11 +24,13 @@ interface AuthState {
   hasPermission: (perm: string) => boolean
 }
 
+const initialToken = localStorage.getItem('token') || sessionStorage.getItem('token')
+
 const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  token: localStorage.getItem('token') || sessionStorage.getItem('token'),
-  isAuthenticated: !!(localStorage.getItem('token') || sessionStorage.getItem('token')),
-  isLoading: false,
+  token: initialToken,
+  isAuthenticated: !!initialToken,
+  isLoading: !!initialToken,
 
   login: async (token: string, remember = false) => {
     if (remember) {
@@ -36,14 +38,14 @@ const useAuthStore = create<AuthState>((set, get) => ({
     } else {
       sessionStorage.setItem('token', token)
     }
-    set({ token, isAuthenticated: true })
+    set({ token, isAuthenticated: true, isLoading: true })
     await get().loadUser()
   },
 
   logout: async () => {
     localStorage.removeItem('token')
     sessionStorage.removeItem('token')
-    set({ user: null, token: null, isAuthenticated: false })
+    set({ user: null, token: null, isAuthenticated: false, isLoading: false })
   },
 
   loadUser: async () => {
@@ -58,7 +60,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
       }
       set({ user, isLoading: false })
     } catch {
-      get().logout()
+      await get().logout()
     }
   },
 

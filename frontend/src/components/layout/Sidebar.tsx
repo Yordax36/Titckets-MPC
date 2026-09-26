@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
-import { LayoutDashboard, Ticket, Users, Building2, Shield, Link2, Briefcase, Settings, UserCircle, X, HelpCircle, Headphones, Package } from 'lucide-react'
+import { LayoutDashboard, Ticket, Users, Building2, Shield, Link2, Briefcase, Settings, UserCircle, X, HelpCircle, Headphones, Package, MapPin } from 'lucide-react'
 import usePermission from '../../hooks/usePermission'
 import useUIStore from '../../store/uiStore'
 import { useSettings } from '../../hooks/useSettings'
@@ -70,20 +70,23 @@ export default function Sidebar() {
             )}
 
             {/* Gestion Institucional */}
-            {(hasPermission('ver_areas') || hasPermission('ver_usuarios') || hasPermission('ver_cargos') || hasPermission('ver_designaciones') || hasPermission('ver_bienes')) && (
+            {(hasPermission('ver_areas') || hasPermission('ver_sedes') || hasPermission('ver_usuarios') || hasPermission('ver_cargos') || hasPermission('ver_designaciones') || (hasPermission('ver_bienes') && hasPermission('gestionar_bienes'))) && (
               <>
                 <div className="my-2 border-t border-gray-200" />
                 <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400">Gestión Institucional</p>
                 {hasPermission('ver_areas') && <NavLinkItem to="/areas" icon={Building2} label="Áreas" />}
+                {hasPermission('ver_sedes') && <NavLinkItem to="/sedes" icon={MapPin} label="Sedes" />}
                 {hasPermission('ver_usuarios') && <NavLinkItem to="/usuarios" icon={Users} label="Personal" />}
                 {hasPermission('ver_cargos') && <NavLinkItem to="/cargos" icon={Briefcase} label="Cargos" />}
                 {hasPermission('ver_designaciones') && <NavLinkItem to="/designaciones" icon={Link2} label="Designaciones" />}
-                {hasPermission('ver_bienes') && <NavLinkItem to="/bienes" icon={Package} label="Bienes" />}
+                {hasPermission('ver_bienes') && (hasPermission('ver_areas') || hasPermission('gestionar_bienes')) && (
+                  <NavLinkItem to="/bienes" icon={Package} label="Bienes" />
+                )}
               </>
             )}
 
             {/* Bienes area for non-admin users */}
-            {!hasPermission('ver_areas') && hasPermission('ver_bienes') && (
+            {!hasPermission('ver_areas') && hasPermission('ver_perfil_area') && (
               <>
                 <div className="my-2 border-t border-gray-200" />
                 <p className="px-3 py-0.5 text-[10px] font-semibold uppercase text-gray-400">Bienes</p>

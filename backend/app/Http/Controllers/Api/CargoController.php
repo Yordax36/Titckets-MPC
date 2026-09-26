@@ -22,7 +22,11 @@ class CargoController extends Controller
             $query->where('estado', $request->estado);
         }
 
-        $cargos = $query->orderBy('nombre')->paginate($request->get('per_page', 50));
+        $perPage = (int) $request->get('per_page', 50);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 50;
+        }
+        $cargos = $query->orderBy('nombre')->paginate($perPage);
 
         return response()->json($cargos);
     }

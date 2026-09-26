@@ -10,6 +10,7 @@ import {
 import type { TipoBien, BienStats } from '../../api/bienApi';
 import { createBien, getTiposBienes, getBienStats } from '../../api/bienApi';
 import { getAreas } from '../../api/areaApi';
+import { getSedes } from '../../api/sedesApi';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../api/axios';
 
@@ -327,6 +328,7 @@ const validateMAC = (v: string) => !v || /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.
 interface FormState {
   tipo_bien_id: number | null;
   area_id: number | null;
+  sede_id: number | null;
   estado: string;
   marca: string;
   modelo: string;
@@ -340,6 +342,7 @@ interface FormState {
 const INITIAL_FORM: FormState = {
   tipo_bien_id: null,
   area_id: null,
+  sede_id: null,
   estado: 'operativo',
   marca: '',
   modelo: '',
@@ -364,6 +367,7 @@ export default function RegistrarBienPage() {
   const [step, setStep] = useState(0);
   const [tipos, setTipos] = useState<TipoBien[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
+  const [sedes, setSedes] = useState<any[]>([]);
   const [_stats, setStats] = useState<BienStats | null>(null);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
@@ -374,12 +378,18 @@ export default function RegistrarBienPage() {
     Promise.all([
       getTiposBienes().then(r => setTipos(r.data ?? r)),
       getAreas().then(r => setAreas(r.data?.data ?? r.data ?? r)),
+      getSedes({ per_page: 100 }).then(r => setSedes((r.data?.data ?? r.data ?? r).filter((s: any) => s.estado === 'activo'))),
       getBienStats().then(r => setStats(r.data ?? r)),
-    ]);
+    ]).catch((err) => {
+      if (err?.response?.status !== 403) {
+        toast.error(getErrorMessage(err));
+      }
+    });
   }, []);
 
   const tipoNombre = useMemo(() => tipos.find(t => t.id === form.tipo_bien_id)?.nombre || '', [tipos, form.tipo_bien_id]);
   const selectedArea = useMemo(() => areas.find((a: any) => a.id === form.area_id), [areas, form.area_id]);
+  const selectedSede = useMemo(() => sedes.find((s: any) => s.id === form.sede_id), [sedes, form.sede_id]);
   const secciones = useMemo(() => CAMPOS_POR_TIPO[tipoNombre] || [], [tipoNombre]);
 
   const filteredAreas = useMemo(() => {
@@ -405,7 +415,7 @@ export default function RegistrarBienPage() {
     if (step === 1 && !form.area_id) { toast.error('Selecciona un área propietaria'); return; }
     if (step === 2) {
       if (!form.marca.trim()) { toast.error('La marca es obligatoria'); return; }
-      if (!form.ubicacion.trim()) { toast.error('La ubicación física es obligatoria'); return; }
+      if (!form.sede_id) { toast.error('La sede es obligatoria'); return; }
       const ip = form.especificaciones.find(e => e.campo === 'direccion_ip')?.valor;
       const mac = form.especificaciones.find(e => e.campo === 'direccion_mac')?.valor;
       if (ip && !validateIP(ip)) { toast.error('Formato de IP inválido (ej: 192.168.1.100)'); return; }
@@ -426,6 +436,7 @@ export default function RegistrarBienPage() {
       await createBien({
         tipo_bien_id: form.tipo_bien_id,
         area_id: form.area_id,
+        sede_id: form.sede_id,
         estado: form.estado,
         marca: form.marca || null,
         modelo: form.modelo || null,
@@ -646,7 +657,15 @@ export default function RegistrarBienPage() {
                           className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-300 transition-all" />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1.5">Ubicación Física <span className="text-red-500">*</span></label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1.5">Sede <span className="text-red-500">*</span></label>
+                        <select value={form.sede_id ?? ''} onChange={e => setForm({ ...form, sede_id: Number(e.target.value) })}
+                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                          <option value="" disabled>Seleccionar sede</option>
+                          {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1.5">Detalle de ubicación</label>
                         <input type="text" value={form.ubicacion} onChange={e => setForm({ ...form, ubicacion: e.target.value })}
                           placeholder="Ej: Oficina principal - Segundo piso"
                           className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-300 transition-all" />
@@ -770,7 +789,11 @@ export default function RegistrarBienPage() {
                         <p className="font-medium text-gray-800">{form.codigo_patrimonial || '—'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400 mb-0.5">Ubicación</p>
+                        <p className="text-xs text-gray-400 mb-0.5">Sede</p>
+                        <p className="font-medium text-gray-800">{selectedSede?.nombre || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-0.5">Detalle de ubicación</p>
                         <p className="font-medium text-gray-800">{form.ubicacion || '—'}</p>
                       </div>
                       <div>
@@ -890,13 +913,13 @@ export default function RegistrarBienPage() {
               </div>
             )}
 
-            {/* Ubicación */}
-            {form.ubicacion && (
+            {/* Sede */}
+            {selectedSede && (
               <div>
-                <p className="text-xs text-gray-400">Ubicación física</p>
+                <p className="text-xs text-gray-400">Sede</p>
                 <div className="flex items-center gap-2 mt-1">
                   <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                  <p className="font-medium text-gray-800 text-xs">{form.ubicacion}</p>
+                  <p className="font-medium text-gray-800 text-xs">{selectedSede.nombre}{form.ubicacion ? ` - ${form.ubicacion}` : ''}</p>
                 </div>
               </div>
             )}

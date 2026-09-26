@@ -196,7 +196,7 @@ export default function AreaBienesPage() {
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Marca</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Modelo</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Estado</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Ubicación</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Sede</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Registro</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Acciones</th>
               </tr>
@@ -238,7 +238,11 @@ export default function AreaBienesPage() {
                         {estado.label}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-[150px] truncate">{bien.ubicacion || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-[150px] truncate">
+                      {(bien as any).sede?.nombre
+                        ? `${(bien as any).sede.nombre}${bien.ubicacion ? ` · ${bien.ubicacion}` : ''}`
+                        : (bien.ubicacion || '—')}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {new Date(bien.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
@@ -332,7 +336,9 @@ export default function AreaBienesPage() {
                     { icon: Tag, label: 'Modelo', value: drawerBien.modelo },
                     { icon: Hash, label: 'N° de Serie', value: drawerBien.numero_serie },
                     { icon: Hash, label: 'Código Patrimonial', value: drawerBien.codigo_patrimonial },
-                    { icon: MapPin, label: 'Ubicación', value: drawerBien.ubicacion },
+                    { icon: MapPin, label: 'Sede', value: (drawerBien as any).sede?.nombre
+                      ? `${(drawerBien as any).sede.nombre}${drawerBien.ubicacion ? ` · ${drawerBien.ubicacion}` : ''}`
+                      : (drawerBien.ubicacion || '—') },
                   ].filter(f => f.value).map((field, i) => (
                     <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                       <div className="flex items-center gap-2 text-sm text-gray-500">
