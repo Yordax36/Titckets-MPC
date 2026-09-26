@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Building2, Plus, Pencil, Trash2, Search, Users, UserX, Ticket, Copy, History, Clock, Calendar, Eye, FileText, Monitor, Wrench } from 'lucide-react';
 import { getAreas, createArea, updateArea, deleteArea, getAreaStats, getArea } from '../../api/areaApi';
 import { getAuditoria } from '../../api/auditApi';
+import { getBienes } from '../../api/bienApi';
+import type { Bien } from '../../api/bienApi';
 import Modal from '../../components/ui/Modal';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import toast from 'react-hot-toast';
@@ -121,6 +123,8 @@ export default function AreaListPage() {
   const [detailTab, setDetailTab] = useState('resumen');
   const [auditData, setAuditData] = useState<any[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
+  const [areaBienes, setAreaBienes] = useState<Bien[]>([]);
+  const [loadingBienes, setLoadingBienes] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -179,6 +183,7 @@ export default function AreaListPage() {
     setDetailOpen(true);
     setLoadingDetail(true);
     setDetailTab('resumen');
+    setAreaBienes([]);
     try {
       const res = await getArea(area.id);
       setDetailArea(res.data);
@@ -189,6 +194,26 @@ export default function AreaListPage() {
       setLoadingDetail(false);
     }
   };
+
+  const loadAreaBienes = async (areaId: number) => {
+    setLoadingBienes(true);
+    try {
+      const res = await getBienes({ area_id: areaId, per_page: 100 });
+      const d = res.data ?? res;
+      setAreaBienes(d.data ?? d);
+    } catch {
+      setAreaBienes([]);
+    } finally {
+      setLoadingBienes(false);
+    }
+  };
+
+  useEffect(() => {
+    if (detailOpen && detailTab === 'equipos' && detailArea) {
+      loadAreaBienes(detailArea.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailTab, detailOpen]);
 
   const loadAuditData = async (areaId: number) => {
     setLoadingAudit(true);
@@ -609,7 +634,7 @@ export default function AreaListPage() {
                   { id: 'tickets', label: 'Tickets Asociados', icon: Ticket, count: detailArea.tickets_count || 0 },
                   { id: 'auditoria', label: 'Auditoría', icon: Clock },
                   { id: 'documentos', label: 'Documentos', icon: FileText, soon: true },
-                  { id: 'equipos', label: 'Equipos Asignados', icon: Monitor, soon: true },
+                  { id: 'equipos', label: 'Equipos Asignados', icon: Monitor },
                   { id: 'servicios', label: 'Servicios Asociados', icon: Wrench, soon: true },
                 ].map(item => (
                   <button
@@ -893,6 +918,52 @@ export default function AreaListPage() {
                     <div className="text-center py-8 text-gray-400">
                       <Clock className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                       <p className="text-xs">Sin registros de auditoría</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Equipos Asignados Tab */}
+              {detailTab === 'equipos' && (
+                <div className="space-y-3">
+                  {loadingBienes ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <div className="animate-spin h-6 w-6 border-2 border-gray-300 border-t-purple-600 rounded-full mx-auto mb-2" />
+                      <p className="text-xs">Cargando equipos...</p>
+                    </div>
+                  ) : areaBienes.length > 0 ? (
+                    areaBienes.map(b => {
+                      const estadoCfg: Record<string, { label: string; cls: string }> = {
+                        operativo: { label: 'Operativo', cls: 'bg-green-100 text-green-700' },
+                        mantenimiento: { label: 'Mantenimiento', cls: 'bg-amber-100 text-amber-700' },
+                        inactivo: { label: 'Inactivo', cls: 'bg-red-100 text-red-700' },
+                        baja: { label: 'Baja', cls: 'bg-gray-100 text-gray-600' },
+                      };
+                      const est = estadoCfg[b.estado] || estadoCfg.operativo;
+                      const tipoNombre = (b as any).tipo_bien?.nombre || 'Bien';
+                      const sedeNombre = (b as any).sede?.nombre;
+                      return (
+                        <div key={b.id} className="flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100 p-3">
+                          <div className="h-9 w-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                            <Monitor className="h-4 w-4 text-purple-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{b.codigo}</p>
+                              <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium ${est.cls}`}>{est.label}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">
+                              {tipoNombre}{b.marca ? ` · ${b.marca}` : ''}{b.modelo ? ` ${b.modelo}` : ''}
+                              {sedeNombre ? ` · ${sedeNombre}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <Monitor className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-xs">Sin equipos asignados</p>
                     </div>
                   )}
                 </div>

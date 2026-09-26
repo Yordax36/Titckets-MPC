@@ -66,6 +66,7 @@ export default function AppRouter() {
           <Route element={<PermissionRoute permission="ver_bienes" />}>
             <Route path="/bienes" element={<BienesPage />} />
             <Route path="/bienes/registrar" element={<RegistrarBienPage />} />
+            <Route path="/bienes/:id/editar" element={<RegistrarBienPage />} />
           </Route>
           <Route element={<PermissionRoute permission="ver_auditoria" />}>
             <Route path="/auditoria" element={<AuditPage />} />

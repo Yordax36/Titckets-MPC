@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi, Package,
   Search, Loader2, ArrowLeft, ArrowRight, Check, Eye,
@@ -8,7 +8,7 @@ import {
   Landmark, Briefcase, FileText,
 } from 'lucide-react';
 import type { TipoBien, BienStats } from '../../api/bienApi';
-import { createBien, getTiposBienes, getBienStats } from '../../api/bienApi';
+import { createBien, updateBien, getBien, getTiposBienes, getBienStats } from '../../api/bienApi';
 import { getAreas } from '../../api/areaApi';
 import { getSedes } from '../../api/sedesApi';
 import toast from 'react-hot-toast';
@@ -287,10 +287,8 @@ const CAMPOS_POR_TIPO: Record<string, SeccionSpec[]> = {
       icono: Keyboard,
       campos: [
         { campo: 'tipo_teclado', label: 'Tipo', type: 'select', options: ['Mecánico', 'Membrana', 'Scissor'] },
-        { campo: 'distribucion', label: 'Distribución', type: 'select', options: ['Español (ES)', 'Inglés (EN)', 'Latinoamericano'] },
         { campo: 'conexion', label: 'Conexión', type: 'select', options: ['USB', 'Bluetooth', 'Inalámbrico', 'PS/2'] },
         { campo: 'retroiluminacion', label: 'Retroiluminación', type: 'select', options: ['Sí', 'No'] },
-        { campo: 'mecanico', label: 'Mecánico', type: 'select', options: ['Sí', 'No'] },
       ],
     },
   ],
@@ -364,7 +362,10 @@ const STEPS = [
 
 export default function RegistrarBienPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const esEdicion = !!id && !isNaN(Number(id));
   const [step, setStep] = useState(0);
+  const [codigoBien, setCodigoBien] = useState('');
   const [tipos, setTipos] = useState<TipoBien[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [sedes, setSedes] = useState<any[]>([]);
@@ -386,6 +387,32 @@ export default function RegistrarBienPage() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!esEdicion) return;
+    getBien(Number(id))
+      .then((r) => {
+        const b = r.data;
+        setCodigoBien(b.codigo || '');
+        setForm({
+          tipo_bien_id: b.tipo_bien_id ?? null,
+          area_id: b.area_id ?? null,
+          sede_id: b.sede_id ?? null,
+          estado: b.estado || 'operativo',
+          marca: b.marca || '',
+          modelo: b.modelo || '',
+          numero_serie: b.numero_serie || '',
+          codigo_patrimonial: b.codigo_patrimonial || '',
+          ubicacion: b.ubicacion || '',
+          observaciones: b.observaciones || '',
+          especificaciones: (b.especificaciones || []).map((e: any) => ({ campo: e.campo, valor: e.valor || '' })),
+        });
+      })
+      .catch((err) => {
+        if (err?.response?.status !== 403) toast.error(getErrorMessage(err));
+        navigate('/bienes');
+      });
+  }, [esEdicion, id, navigate]);
 
   const tipoNombre = useMemo(() => tipos.find(t => t.id === form.tipo_bien_id)?.nombre || '', [tipos, form.tipo_bien_id]);
   const selectedArea = useMemo(() => areas.find((a: any) => a.id === form.area_id), [areas, form.area_id]);
@@ -433,7 +460,7 @@ export default function RegistrarBienPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await createBien({
+      const payload = {
         tipo_bien_id: form.tipo_bien_id,
         area_id: form.area_id,
         sede_id: form.sede_id,
@@ -445,8 +472,14 @@ export default function RegistrarBienPage() {
         ubicacion: form.ubicacion || null,
         observaciones: form.observaciones || null,
         especificaciones: form.especificaciones.filter(e => e.campo),
-      });
-      toast.success('Bien registrado correctamente');
+      };
+      if (esEdicion) {
+        await updateBien(Number(id), payload);
+        toast.success('Bien actualizado correctamente');
+      } else {
+        await createBien(payload);
+        toast.success('Bien registrado correctamente');
+      }
       navigate('/bienes');
     } catch (e) {
       toast.error(getErrorMessage(e));
@@ -460,8 +493,8 @@ export default function RegistrarBienPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Registrar Nuevo Bien</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Sigue los pasos para registrar un nuevo bien tecnológico en el inventario.</p>
+          <h1 className="text-xl font-bold text-gray-900">{esEdicion ? 'Editar Bien' : 'Registrar Nuevo Bien'}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{esEdicion ? 'Modifica los datos del bien tecnológico.' : 'Sigue los pasos para registrar un nuevo bien tecnológico en el inventario.'}</p>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Building2 className="w-4 h-4" />
@@ -506,8 +539,8 @@ export default function RegistrarBienPage() {
                 <Check className="w-4 h-4" />
               </div>
               <div className="pt-1">
-                <p className={`text-sm font-semibold ${step === STEPS.length ? 'text-green-600' : 'text-gray-300'}`}>Registro completado</p>
-                <p className="text-xs text-gray-400 mt-0.5">Bien registrado correctamente</p>
+                <p className={`text-sm font-semibold ${step === STEPS.length ? 'text-green-600' : 'text-gray-300'}`}>{esEdicion ? 'Edición lista' : 'Registro completado'}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{esEdicion ? 'Guarda los cambios para continuar' : 'Bien registrado correctamente'}</p>
               </div>
             </div>
           </div>
@@ -847,7 +880,7 @@ export default function RegistrarBienPage() {
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-200 disabled:opacity-50 transition-all">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                Registrar Bien
+                {esEdicion ? 'Guardar Cambios' : 'Registrar Bien'}
               </button>
             )}
           </div>
@@ -930,7 +963,7 @@ export default function RegistrarBienPage() {
               <div className="flex items-center gap-2 mt-1">
                 <Hash className="w-3.5 h-3.5 text-gray-400" />
                 <div>
-                  <p className="font-medium text-gray-800 text-xs">Se generará automáticamente</p>
+                  <p className="font-medium text-gray-800 text-xs">{esEdicion && codigoBien ? codigoBien : 'Se generará automáticamente'}</p>
                 </div>
               </div>
             </div>

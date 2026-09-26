@@ -4,11 +4,12 @@ import {
   MapPin, Tag, Hash, Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi,
   ChevronLeft, ChevronRight, X, Info, Clock, CircleCheck, Wrench,
   FileText, Cpu, HardDrive, MemoryStick, Globe, Network,
-  Palette, Layers,
+  Palette, Layers, Download,
 } from 'lucide-react';
 import type { Bien, TipoBien, BienStats } from '../../api/bienApi';
 import { getBienes, getBienStats, getTiposBienes } from '../../api/bienApi';
 import { getAreaProfile } from '../../api/areaProfileApi';
+import { exportCsv } from '../../utils/exportCsv';
 import toast from 'react-hot-toast';
 
 const TIPO_ICONOS: Record<string, any> = {
@@ -101,6 +102,31 @@ export default function AreaBienesPage() {
   const getTypeName = (b: Bien) => (b as any).tipo_bien?.nombre || '—';
   const getTypeIcon = (b: Bien) => TIPO_ICONOS[getTypeName(b)] || Package;
 
+  const handleExportCsv = async () => {
+    try {
+      const params: Record<string, any> = { per_page: 1000 };
+      if (search) params.search = search;
+      if (filterEstado) params.estado = filterEstado;
+      if (filterTipo) params.tipo_bien_id = filterTipo;
+      const res = await getBienes(params);
+      const d = res.data ?? res;
+      const rows: Bien[] = d.data ?? d;
+      exportCsv(
+        'bienes-mi-area.csv',
+        ['Código', 'Tipo', 'Marca', 'Modelo', 'N° Serie', 'Código Patrimonial', 'Estado', 'Sede', 'Ubicación', 'Registro'],
+        rows.map(b => [
+          b.codigo, getTypeName(b), b.marca, b.modelo, b.numero_serie, b.codigo_patrimonial,
+          (ESTADO_CONFIG[b.estado] || ESTADO_CONFIG.operativo).label,
+          b.sede?.nombre ?? '', b.ubicacion ?? '',
+          b.created_at ? new Date(b.created_at).toLocaleDateString('es-PE') : '',
+        ]),
+      );
+      toast.success(`Reporte exportado (${rows.length} bienes)`);
+    } catch {
+      toast.error('Error al exportar el reporte');
+    }
+  };
+
   const openDrawer = async (bien: Bien) => {
     setDrawerBien(bien);
     setDrawerLoading(false);
@@ -184,6 +210,10 @@ export default function AreaBienesPage() {
             <option value="">Todos los tipos</option>
             {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
           </select>
+          <button onClick={handleExportCsv}
+            className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
+            <Download className="h-4 w-4" /> Exportar
+          </button>
         </div>
 
         {/* Table */}

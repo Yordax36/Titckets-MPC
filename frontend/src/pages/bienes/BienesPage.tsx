@@ -12,6 +12,7 @@ import { getBienes, getBienStats, getTiposBienes, getBienesPorArea } from '../..
 import { getSedes } from '../../api/sedesApi';
 import usePermission from '../../hooks/usePermission';
 import { PERMISOS } from '../../utils/permissions';
+import { exportCsv } from '../../utils/exportCsv';
 import toast from 'react-hot-toast';
 
 /* ─── Config ─── */
@@ -142,6 +143,31 @@ export default function BienesPage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const params: Record<string, any> = { per_page: 1000 };
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (sedeFilter) params.sede_id = sedeFilter;
+      const res = await getBienes(params);
+      const d = res.data ?? res;
+      const rows: Bien[] = d.data ?? d;
+      exportCsv(
+        'bienes-tecnologicos.csv',
+        ['Código', 'Tipo', 'Marca', 'Modelo', 'N° Serie', 'Código Patrimonial', 'Estado', 'Área', 'Sede', 'Ubicación', 'Responsable', 'Registro'],
+        rows.map(b => [
+          b.codigo, getTypeName(b), b.marca, b.modelo, b.numero_serie, b.codigo_patrimonial,
+          (ESTADO_CONFIG[b.estado] || ESTADO_CONFIG.operativo).label,
+          (b as any).area?.nombre ?? '', b.sede?.nombre ?? '', b.ubicacion ?? '',
+          (b as any).responsable_nombre ?? '',
+          b.created_at ? new Date(b.created_at).toLocaleDateString('es-PE') : '',
+        ]),
+      );
+      toast.success(`Reporte exportado (${rows.length} bienes)`);
+    } catch {
+      toast.error('Error al exportar el reporte');
+    }
+  };
+
   const getTypeName = (b: Bien) => (b as any).tipo_bien?.nombre || '—';
   const getTypeIcon = (b: Bien) => TIPO_ICONOS[getTypeName(b)] || Package;
   const getAreaIcon = (idx: number) => AREA_ICONS[idx % AREA_ICONS.length];
@@ -207,10 +233,12 @@ export default function BienesPage() {
               <Plus className="h-4 w-4" /> Registrar bien
             </button>
           )}
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
+          <button onClick={handleExportCsv}
+            className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
+          <button onClick={() => window.print()}
+            className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
             <PrinterIcon className="h-4 w-4" /> Imprimir
           </button>
         </div>
@@ -369,13 +397,13 @@ export default function BienesPage() {
                                           <Eye className="w-3.5 h-3.5" />
                                         </button>
                                         {canManage && (
-                                          <button onClick={() => toast.success('Edición próximamente')}
+                                          <button onClick={() => navigate(`/bienes/${bien.id}/editar`)}
                                             className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Editar">
                                             <Pencil className="w-3.5 h-3.5" />
                                           </button>
                                         )}
                                         {canManage && (
-                                          <button onClick={() => toast.success('Mantenimiento próximamente')}
+                                          <button onClick={() => navigate(`/bienes/${bien.id}?tab=mantenimientos`)}
                                             className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Registrar mantenimiento">
                                             <Wrench className="w-3.5 h-3.5" />
                                           </button>

@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi, Package,
-  Loader2, Plus, User, MapPin, Tag, Hash, Pencil, MoreVertical,
+  Loader2, Plus, User, MapPin, Tag, Hash, Pencil,
   CircleCheck, Wrench, Trash2, Clock
 } from 'lucide-react';
 import type { Bien, Mantenimiento, BienHistorial } from '../../api/bienApi';
-import { getBien, getBienHistorial, getMantenimientos, createMantenimiento, cambiarEstadoBien } from '../../api/bienApi';
+import { getBien, getBienHistorial, getMantenimientos, createMantenimiento, cambiarEstadoBien, deleteBien } from '../../api/bienApi';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../api/axios';
 import usePermission from '../../hooks/usePermission';
 import { PERMISOS } from '../../utils/permissions';
 import Modal from '../../components/ui/Modal';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const TIPO_ICONOS: Record<string, any> = {
   Monitor, Laptop, Printer, Keyboard, Mouse, Volume2, Wifi, Package,
@@ -34,6 +35,7 @@ const EVENTO_COLORS: Record<string, string> = {
 export default function BienDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { hasPermission } = usePermission();
   const canManage = hasPermission(PERMISOS.EDITAR_BIEN) || hasPermission(PERMISOS.GESTIONAR_BIENES);
   const canDelete = hasPermission(PERMISOS.ELIMINAR_BIEN);
@@ -42,10 +44,15 @@ export default function BienDetailPage() {
   const [historial, setHistorial] = useState<BienHistorial[]>([]);
   const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'info' | 'specs' | 'mantenimientos' | 'historial'>('info');
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'info' | 'specs' | 'mantenimientos' | 'historial'>(
+    tabParam === 'specs' || tabParam === 'mantenimientos' || tabParam === 'historial' ? tabParam : 'info'
+  );
   const [mantModalOpen, setMantModalOpen] = useState(false);
   const [mantForm, setMantForm] = useState({ fecha: '', tipo_mantenimiento: '', descripcion: '', estado: 'completado' });
   const [savingMant, setSavingMant] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { loadBien(); }, [id]);
 
@@ -67,6 +74,19 @@ export default function BienDetailPage() {
       setMantenimientos(mantRes);
     } catch (e) { toast.error(getErrorMessage(e)); navigate('/bienes'); }
     finally { setLoading(false); }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteBien(Number(id));
+      toast.success('Bien eliminado correctamente');
+      navigate('/bienes');
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+      setDeleting(false);
+      setConfirmDeleteOpen(false);
+    }
   };
 
   const parsedId = Number(id);
@@ -140,13 +160,13 @@ export default function BienDetailPage() {
         </button>
         <div className="flex items-center gap-2">
           {canManage && (
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+            <button onClick={() => navigate(`/bienes/${id}/editar`)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
               <Pencil className="h-4 w-4" /> Editar Bien
             </button>
           )}
           {canDelete && (
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-              <MoreVertical className="h-4 w-4" /> Más acciones
+            <button onClick={() => setConfirmDeleteOpen(true)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded-xl hover:bg-red-50 transition-colors">
+              <Trash2 className="h-4 w-4" /> Eliminar Bien
             </button>
           )}
         </div>
@@ -463,6 +483,16 @@ export default function BienDetailPage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Eliminar Bien"
+        message={`¿Estás seguro de eliminar el bien "${bien?.codigo || ''}"? Esta acción no se puede deshacer.`}
+        variant="danger"
+      />
     </div>
   );
 }
