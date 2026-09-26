@@ -76,6 +76,16 @@ class AreaEncargadoSeeder extends Seeder
                 ->exists();
 
             if (!$exists) {
+                // Deactivate any existing "Área Institucional" for this area
+                AreaUsuario::where('area_id', $area->id)
+                    ->where('cargo_id', $cargoInstitucional->id)
+                    ->where('estado_asignacion', 'activo')
+                    ->update([
+                        'estado_asignacion' => 'finalizado',
+                        'fecha_fin' => now(),
+                        'activo' => false,
+                    ]);
+
                 AreaUsuario::create([
                     'area_id' => $area->id,
                     'usuario_id' => $user->id,
@@ -95,5 +105,24 @@ class AreaEncargadoSeeder extends Seeder
         }
 
         $this->command->info("Encargados creados: $created");
+
+        // Cleanup: Deactivate ALL Área Institucional for areas that have ANY real person active
+        $areasConPersonalReal = AreaUsuario::where('estado_asignacion', 'activo')
+            ->where('cargo_id', '!=', $cargoInstitucional->id)
+            ->pluck('area_id')
+            ->unique();
+
+        foreach ($areasConPersonalReal as $areaId) {
+            AreaUsuario::where('area_id', $areaId)
+                ->where('cargo_id', $cargoInstitucional->id)
+                ->where('estado_asignacion', 'activo')
+                ->update([
+                    'estado_asignacion' => 'finalizado',
+                    'fecha_fin' => now(),
+                    'activo' => false,
+                ]);
+        }
+
+        $this->command->info("Limpieza Área Institucional completada para " . $areasConPersonalReal->count() . " areas.");
     }
 }
