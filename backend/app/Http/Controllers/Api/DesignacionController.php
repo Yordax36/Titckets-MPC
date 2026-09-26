@@ -266,7 +266,7 @@ class DesignacionController extends Controller
 
         $usuarios = User::where('estado', 'activo')
             ->where('actualmente_laborando', true)
-            ->whereHas('rol', fn($q) => $q->where('nombre', '!=', 'Administrador')->where('nombre', '!=', 'Area Usuaria'))
+            ->whereHas('rol', fn($q) => $q->where('nombre', '!=', 'Administrador')->where('nombre', '!=', 'Area Usuaria')->where('nombre', '!=', 'Tecnico'))
             ->whereNotIn('id', $usuariosConDesignacionActiva)
             ->with('rol')
             ->orderBy('nombres')
