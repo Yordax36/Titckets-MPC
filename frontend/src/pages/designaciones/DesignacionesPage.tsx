@@ -28,11 +28,6 @@ function getInitials(nombres?: string, apellidos?: string) {
   return `${(nombres?.[0] || '').toUpperCase()}${(apellidos?.[0] || '').toUpperCase()}`;
 }
 
-function todayLocal(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
-
 function parseLocalDate(dateStr: string): Date {
   const part = dateStr.substring(0, 10);
   const [y, m, d] = part.split('-').map(Number);
@@ -65,8 +60,6 @@ export default function DesignacionesPage() {
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
   const [selectedCargo, setSelectedCargo] = useState<Cargo | null>(null);
   const [tipoDesignacion, setTipoDesignacion] = useState('Titular');
-  const [observaciones, setObservaciones] = useState('');
-  const [fechaInicio, setFechaInicio] = useState(todayLocal());
   const [saving, setSaving] = useState(false);
   const [areaSearch, setAreaSearch] = useState('');
   const [usuarioSearch, setUsuarioSearch] = useState('');
@@ -97,8 +90,6 @@ export default function DesignacionesPage() {
     setSelectedUsuario(null);
     setSelectedCargo(null);
     setTipoDesignacion('Titular');
-    setObservaciones('');
-    setFechaInicio(todayLocal());
     setAreaSearch('');
     setUsuarioSearch('');
     loadFormData();
@@ -114,8 +105,6 @@ export default function DesignacionesPage() {
         usuario_id: selectedUsuario.id,
         cargo_id: selectedCargo.id,
         tipo_designacion: tipoDesignacion,
-        observaciones: observaciones || undefined,
-        fecha_inicio: fechaInicio || undefined,
       });
       toast.success('Designación creada correctamente');
       setShowForm(false);
@@ -434,15 +423,50 @@ export default function DesignacionesPage() {
                   <>
                     <div className="flex items-center gap-2 mb-4">
                       <div className="h-7 w-7 rounded-full bg-purple-600 text-white flex items-center justify-center text-[11px] font-bold">5</div>
-                      <span className="text-sm font-semibold text-gray-700">Fecha y Observaciones</span>
+                      <span className="text-sm font-semibold text-gray-700">Confirmar Designación</span>
                     </div>
-                    <div className="max-w-sm">
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Fecha de Inicio</label>
-                      <DatePicker value={fechaInicio} onChange={setFechaInicio} />
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5 mt-4">Observaciones</label>
-                      <textarea placeholder="Agrega alguna observación (opcional)..." value={observaciones} onChange={e => setObservaciones(e.target.value.slice(0, 500))}
-                        rows={4} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none" />
-                      <p className="text-[10px] text-gray-400 mt-1">{observaciones.length}/500</p>
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                        <div className="h-9 w-9 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Área</p>
+                          <p className="text-sm font-medium text-gray-900">{selectedArea?.nombre}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                        <div className="h-9 w-9 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <User className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Responsable</p>
+                          <p className="text-sm font-medium text-gray-900">{selectedUsuario?.nombres} {selectedUsuario?.apellidos}</p>
+                          <p className="text-xs text-gray-500">DNI: {selectedUsuario?.dni}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                        <div className="h-9 w-9 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Briefcase className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Cargo</p>
+                          <p className="text-sm font-medium text-gray-900">{selectedCargo?.nombre}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                        <div className="h-9 w-9 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Shield className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Tipo</p>
+                          <p className="text-sm font-medium text-gray-900">{tipoDesignacion}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Fecha de inicio: <span className="font-medium">Hoy ({new Date().toLocaleDateString('es-PE')})</span>
+                        {' | Se puede editar después'}
+                      </p>
                     </div>
                   </>
                 )}
