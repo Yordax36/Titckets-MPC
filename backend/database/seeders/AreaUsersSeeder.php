@@ -26,6 +26,16 @@ class AreaUsersSeeder extends Seeder
         $countAreaUsuarios = 0;
 
         foreach ($areas as $area) {
+            // Skip if area already has an active designación (from PersonalSeeder)
+            $existingDesignacion = AreaUsuario::where('area_id', $area->id)
+                ->where('estado_asignacion', 'activo')
+                ->first();
+            
+            if ($existingDesignacion) {
+                $this->command->info("Saltando {$area->nombre}: ya tiene designación activa ({$existingDesignacion->usuario->nombres} {$existingDesignacion->usuario->apellidos})");
+                continue;
+            }
+
             $email = $area->correo;
             $password = $area->password_correo ?: 'MPC@2026!';
 
