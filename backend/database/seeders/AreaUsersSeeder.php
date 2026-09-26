@@ -41,7 +41,7 @@ class AreaUsersSeeder extends Seeder
                     'email' => $email,
                     'username' => $email,
                     'password' => Hash::make($password),
-                    'dni' => str_pad($area->id, 8, '0', STR_PAD_LEFT),
+                    'dni' => '9' . str_pad($area->id, 7, '0', STR_PAD_LEFT),
                     'cargo' => 'Área Institucional',
                     'rol_id' => $rolArea->id,
                     'estado' => 'activo',
