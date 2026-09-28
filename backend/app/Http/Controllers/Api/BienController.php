@@ -234,7 +234,7 @@ class BienController extends Controller
                 $this->registrarHistorial($bien, 'actualizacion', implode(', ', $cambios));
             }
 
-            if ($request->filled('especificaciones')) {
+            if ($request->has('especificaciones') && is_array($request->especificaciones)) {
                 $bien->especificaciones()->delete();
                 foreach ($request->especificaciones as $esp) {
                     $bien->especificaciones()->create([
