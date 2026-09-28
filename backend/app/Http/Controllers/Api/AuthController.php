@@ -53,14 +53,24 @@ class AuthController extends Controller
                 }
             }
 
-            return response()->json(['message' => 'Credenciales incorrectas'], 401);
+            return \App\Helpers\ApiError::response(
+                $request,
+                401,
+                'Credenciales incorrectas. Verifica tu correo y contraseña.',
+                'AUTH_INVALID_CREDENTIALS'
+            );
         }
 
         $user = Auth::user();
 
         if ($user->estado !== 'activo') {
             auth()->logout();
-            return response()->json(['message' => 'Su cuenta está desactivada. Contacte al administrador.'], 403);
+            return \App\Helpers\ApiError::response(
+                $request,
+                403,
+                'Su cuenta está desactivada. Contacte al administrador.',
+                'USER_INACTIVE'
+            );
         }
 
         $user->load(['areaInstitucional', 'area', 'areaActual.area', 'rol.permisos']);

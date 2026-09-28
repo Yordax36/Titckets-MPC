@@ -21,7 +21,12 @@ class CheckPermission
         $user = $request->user();
 
         if (!$user) {
-            return response()->json(['message' => 'No autenticado'], 401);
+            return \App\Helpers\ApiError::response(
+                $request,
+                401,
+                'No has iniciado sesión. Inicia sesión para continuar.',
+                'AUTH_UNAUTHORIZED'
+            );
         }
 
         // Admin bypass
@@ -35,6 +40,11 @@ class CheckPermission
             }
         }
 
-        return response()->json(['message' => 'No autorizado'], 403);
+        return \App\Helpers\ApiError::response(
+            $request,
+            403,
+            'No tienes permisos para realizar esta acción.',
+            'AUTH_FORBIDDEN'
+        );
     }
 }
