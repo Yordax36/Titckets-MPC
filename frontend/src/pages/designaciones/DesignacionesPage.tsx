@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link2, Plus, Search, Building2, AlertTriangle, X, Check, ArrowLeft, ChevronDown, User, Briefcase, Shield, Pencil, Loader2 } from 'lucide-react';
 import { getDesignaciones, createDesignacion, updateDesignacion, finalizarDesignacion, getAreasDisponibles, getUsuariosDisponibles, getCargosDisponibles } from '../../api/designacionApi';
 import DatePicker from '../../components/ui/DatePicker';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
+import LoadError from '../../components/ui/LoadError';
 import { getErrorMessage } from '../../api/axios';
 
 interface Designacion {
@@ -63,6 +64,7 @@ export default function DesignacionesPage() {
   const [saving, setSaving] = useState(false);
   const [areaSearch, setAreaSearch] = useState('');
   const [usuarioSearch, setUsuarioSearch] = useState('');
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => { loadDesignaciones(); }, [search]);
 
@@ -73,7 +75,8 @@ export default function DesignacionesPage() {
       if (search) params.search = search;
       const res = await getDesignaciones(params);
       setDesignaciones(Array.isArray(res) ? res : res.data);
-    } catch (e) { toast.error(getErrorMessage(e)); }
+      setLoadError(false);
+    } catch { setLoadError(true); }
     finally { setLoading(false); }
   };
 
@@ -199,6 +202,8 @@ export default function DesignacionesPage() {
 
         {loading ? (
           <div className="py-12 text-center"><Loader2 className="h-6 w-6 animate-spin text-purple-600 mx-auto" /></div>
+        ) : loadError ? (
+          <LoadError message="No se pudieron cargar las designaciones." onRetry={loadDesignaciones} />
         ) : designaciones.length === 0 ? (
           <div className="py-12 text-center text-gray-400">
             <Link2 className="h-10 w-10 mx-auto mb-2 text-gray-300" />

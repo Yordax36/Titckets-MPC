@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Building2, User, Shield, Activity, Lock, Eye, EyeOff, Check, Calendar, Mail, Phone, Clock, Ticket, AlertCircle } from 'lucide-react';
 import { getAreaProfile, changeAreaPassword } from '../../api/areaProfileApi';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
 import { getErrorMessage } from '../../api/axios';
 
 interface AreaProfile {

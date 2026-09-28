@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Settings, Save, Loader2, Upload, X } from 'lucide-react';
 import { getSettings, updateSettings } from '../../api/settingsApi';
 import useSettingsStore from '../../store/settingsStore';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
 import { getErrorMessage } from '../../api/axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';

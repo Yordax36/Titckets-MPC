@@ -3,6 +3,7 @@ import Sidebar from './Sidebar'
 import Navbar from './Navbar'
 import useAuth from '../../hooks/useAuth'
 import Loading from '../ui/Loading'
+import ErrorBoundary from '../errors/ErrorBoundary'
 
 export default function Layout() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -21,7 +22,9 @@ export default function Layout() {
       <div className="lg:ml-64">
         <Navbar />
         <main className="p-4 lg:p-6">
-          <Outlet />
+          <ErrorBoundary variant="inline">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

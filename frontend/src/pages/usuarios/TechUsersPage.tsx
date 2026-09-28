@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import toast from 'react-hot-toast'
+import toast from '../../utils/notify'
 import { Eye, X, Search, ChevronUp, ChevronDown, Headphones, Users } from 'lucide-react'
 import { getUsuarios, getUsuario, getTecnicos } from '../../api/usuarioApi'
 import Button from '../../components/ui/Button'
@@ -9,6 +9,7 @@ import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import Tooltip from '../../components/ui/Tooltip'
 import SkeletonTable from '../../components/ui/SkeletonTable'
+import LoadError from '../../components/ui/LoadError'
 import useAuth from '../../hooks/useAuth'
 
 type ModalMode = 'view' | null
@@ -24,6 +25,7 @@ export default function TechUsersPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [loadError, setLoadError] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -38,7 +40,8 @@ export default function TechUsersPage() {
         const res = await getTecnicos({ search: search || undefined })
         setUsuarios(res.data || [])
       }
-    } catch { toast.error('Error al cargar datos') }
+      setLoadError(false)
+    } catch { setLoadError(true) }
     finally { setLoading(false) }
   }, [isAdmin])
 
@@ -106,7 +109,9 @@ export default function TechUsersPage() {
         </div>
       </CardBody></Card>
 
-      {loading ? <SkeletonTable rows={5} cols={isAdmin ? 5 : 4} /> : filteredUsuarios.length === 0 ? (
+      {loading ? <SkeletonTable rows={5} cols={isAdmin ? 5 : 4} /> : loadError ? (
+        <Card><LoadError message="No se pudieron cargar los técnicos." onRetry={loadData} /></Card>
+      ) : filteredUsuarios.length === 0 ? (
         <Card><div className="flex flex-col items-center justify-center py-16"><div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800"><Users className="h-8 w-8 text-gray-400" /></div><h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No hay técnicos</h3><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">No se encontraron técnicos en el sistema</p></div></Card>
       ) : (
         <Card><Table>

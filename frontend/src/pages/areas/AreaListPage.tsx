@@ -6,8 +6,9 @@ import { getBienes } from '../../api/bienApi';
 import type { Bien } from '../../api/bienApi';
 import Modal from '../../components/ui/Modal';
 import ConfirmModal from '../../components/ui/ConfirmModal';
-import toast from 'react-hot-toast';
-import { getErrorMessage } from '../../api/axios';
+import toast from '../../utils/notify';
+import LoadError from '../../components/ui/LoadError';
+import { getErrorMessage, getValidationErrors } from '../../api/axios';
 
 interface AreaHistorial {
   id: number;
@@ -126,6 +127,8 @@ export default function AreaListPage() {
   const [areaBienes, setAreaBienes] = useState<Bien[]>([]);
   const [loadingBienes, setLoadingBienes] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     loadData();
@@ -140,8 +143,9 @@ export default function AreaListPage() {
       ]);
       setAreas(areasRes.data.data);
       setStats(statsRes.data);
-    } catch (e) {
-      toast.error(getErrorMessage(e));
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -150,6 +154,7 @@ export default function AreaListPage() {
   const openCreate = () => {
     setEditingArea(null);
     setForm({ nombre: '', correo: '', password_correo: '', descripcion: '', estado: 'activo' });
+    setFieldErrors(null);
     setModalOpen(true);
   };
 
@@ -162,6 +167,7 @@ export default function AreaListPage() {
       descripcion: area.descripcion || '',
       estado: area.estado,
     });
+    setFieldErrors(null);
     setModalOpen(true);
   };
 
@@ -251,6 +257,7 @@ export default function AreaListPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setFieldErrors(null);
     try {
       if (editingArea) {
         await updateArea(editingArea.id, form);
@@ -262,7 +269,9 @@ export default function AreaListPage() {
       setModalOpen(false);
       loadData();
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      const errors = getValidationErrors(err);
+      setFieldErrors(errors);
+      if (!errors) toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -429,6 +438,8 @@ export default function AreaListPage() {
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">Cargando...</td></tr>
+            ) : loadError ? (
+              <tr><td colSpan={4} className="p-0"><LoadError message="No se pudieron cargar las áreas." onRetry={loadData} /></td></tr>
             ) : filteredAreas.length === 0 ? (
               <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">No se encontraron áreas</td></tr>
             ) : (
@@ -507,10 +518,11 @@ export default function AreaListPage() {
             <input
               type="text"
               value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => { setForm({ ...form, nombre: e.target.value }); if (fieldErrors) setFieldErrors(null); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${fieldErrors?.nombre ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
               required
             />
+            {fieldErrors?.nombre && <p className="mt-1 text-sm text-red-600">{fieldErrors.nombre}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Correo institucional <span className="text-red-500">*</span></label>
@@ -518,10 +530,11 @@ export default function AreaListPage() {
               type="email"
               required
               value={form.correo}
-              onChange={(e) => setForm({ ...form, correo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => { setForm({ ...form, correo: e.target.value }); if (fieldErrors) setFieldErrors(null); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${fieldErrors?.correo ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
               placeholder="ejemplo@municasma.gob.pe"
             />
+            {fieldErrors?.correo && <p className="mt-1 text-sm text-red-600">{fieldErrors.correo}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña de acceso {!editingArea && <span className="text-red-500">*</span>}</label>
@@ -529,10 +542,11 @@ export default function AreaListPage() {
               type="text"
               required={!editingArea}
               value={form.password_correo}
-              onChange={(e) => setForm({ ...form, password_correo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => { setForm({ ...form, password_correo: e.target.value }); if (fieldErrors) setFieldErrors(null); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${fieldErrors?.password_correo ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
               placeholder="Contraseña para iniciar sesión"
             />
+            {fieldErrors?.password_correo && <p className="mt-1 text-sm text-red-600">{fieldErrors.password_correo}</p>}
             <p className="mt-1 text-xs text-gray-500">
               {editingArea
                 ? 'Deja vacío para mantener la contraseña actual'

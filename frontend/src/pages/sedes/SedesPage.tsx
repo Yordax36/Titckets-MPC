@@ -3,8 +3,9 @@ import { MapPin, Plus, Pencil, Trash2, Search, Package, Copy } from 'lucide-reac
 import { getSedes, createSede, updateSede, deleteSede } from '../../api/sedesApi';
 import Modal from '../../components/ui/Modal';
 import ConfirmModal from '../../components/ui/ConfirmModal';
-import toast from 'react-hot-toast';
-import { getErrorMessage } from '../../api/axios';
+import toast from '../../utils/notify';
+import { getErrorMessage, getValidationErrors } from '../../api/axios';
+import LoadError from '../../components/ui/LoadError';
 
 interface Sede {
   id: number;
@@ -26,6 +27,8 @@ export default function SedesPage() {
   const [deletingSede, setDeletingSede] = useState<Sede | null>(null);
   const [form, setForm] = useState({ nombre: '', direccion: '', descripcion: '', estado: 'activo' });
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     loadData();
@@ -36,8 +39,9 @@ export default function SedesPage() {
     try {
       const res = await getSedes({ per_page: 100 });
       setSedes(res.data.data);
-    } catch (e) {
-      toast.error(getErrorMessage(e));
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -46,6 +50,7 @@ export default function SedesPage() {
   const openCreate = () => {
     setEditingSede(null);
     setForm({ nombre: '', direccion: '', descripcion: '', estado: 'activo' });
+    setFieldErrors(null);
     setModalOpen(true);
   };
 
@@ -57,12 +62,14 @@ export default function SedesPage() {
       descripcion: sede.descripcion || '',
       estado: sede.estado,
     });
+    setFieldErrors(null);
     setModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setFieldErrors(null);
     try {
       if (editingSede) {
         await updateSede(editingSede.id, form);
@@ -74,7 +81,9 @@ export default function SedesPage() {
       setModalOpen(false);
       loadData();
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      const errors = getValidationErrors(err);
+      setFieldErrors(errors);
+      if (!errors) toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -190,6 +199,8 @@ export default function SedesPage() {
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">Cargando...</td></tr>
+            ) : loadError ? (
+              <tr><td colSpan={5} className="p-0"><LoadError message="No se pudieron cargar las sedes." onRetry={loadData} /></td></tr>
             ) : filteredSedes.length === 0 ? (
               <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No se encontraron sedes</td></tr>
             ) : (
@@ -259,11 +270,12 @@ export default function SedesPage() {
             <input
               type="text"
               value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => { setForm({ ...form, nombre: e.target.value }); if (fieldErrors) setFieldErrors(null); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${fieldErrors?.nombre ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
               placeholder="Ej: Sede Principal"
               required
             />
+            {fieldErrors?.nombre && <p className="mt-1 text-sm text-red-600">{fieldErrors.nombre}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>

@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link2, Plus, Search, Building2, Calendar, AlertTriangle, X, Check, ArrowLeft, Info, ChevronDown, Clock, UserX, CheckCircle2 } from 'lucide-react';
 import { getAsignaciones, createAsignacion, finalizarAsignacion, getAreasDisponibles, getUsuariosDisponibles } from '../../api/asignacionApi';
 import DatePicker from '../../components/ui/DatePicker';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
+import LoadError from '../../components/ui/LoadError';
 import { getErrorMessage } from '../../api/axios';
 
 interface Asignacion {
@@ -131,6 +132,7 @@ export default function AsignacionesPage() {
   const [showAllUsers, setShowAllUsers] = useState(false);
 
   const [fechaFin, setFechaFin] = useState('');
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     loadAsignaciones();
@@ -148,8 +150,9 @@ export default function AsignacionesPage() {
       if (filterEstado) params.estado = filterEstado;
       const res = await getAsignaciones(params);
       setAsignaciones(res.data.data);
-    } catch (e) {
-      toast.error(getErrorMessage(e));
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -596,6 +599,8 @@ export default function AsignacionesPage() {
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500">Cargando...</td></tr>
+            ) : loadError ? (
+              <tr><td colSpan={6} className="p-0"><LoadError message="No se pudieron cargar las asignaciones." onRetry={loadAsignaciones} /></td></tr>
             ) : asignaciones.length === 0 ? (
               <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500">No se encontraron asignaciones</td></tr>
             ) : (

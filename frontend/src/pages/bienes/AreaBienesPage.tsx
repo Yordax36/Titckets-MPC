@@ -10,7 +10,8 @@ import type { Bien, TipoBien, BienStats } from '../../api/bienApi';
 import { getBienes, getBienStats, getTiposBienes } from '../../api/bienApi';
 import { getAreaProfile } from '../../api/areaProfileApi';
 import { exportCsv } from '../../utils/exportCsv';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
+import LoadError from '../../components/ui/LoadError';
 
 const TIPO_ICONOS: Record<string, any> = {
   'Computadora de Escritorio': Monitor,
@@ -53,6 +54,7 @@ export default function AreaBienesPage() {
   const [total, setTotal] = useState(0);
   const [drawerBien, setDrawerBien] = useState<Bien | null>(null);
   const [, setDrawerLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -79,7 +81,8 @@ export default function AreaBienesPage() {
       setLastPage(bData.last_page ?? 1);
       setTotal(bData.total ?? 0);
       setStats(statsRes.data ?? statsRes);
-    } catch { toast.error('Error al cargar datos'); }
+      setLoadError(false);
+    } catch { setLoadError(true); }
     finally { setLoading(false); }
   };
 
@@ -236,6 +239,8 @@ export default function AreaBienesPage() {
                 <tr><td colSpan={8} className="text-center py-16">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-500 mx-auto" />
                 </td></tr>
+              ) : loadError ? (
+                <tr><td colSpan={8} className="p-0"><LoadError message="No se pudieron cargar los bienes." onRetry={loadData} /></td></tr>
               ) : bienes.length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-16 text-gray-400">
                   <Package className="h-10 w-10 mx-auto mb-3 text-gray-300" />

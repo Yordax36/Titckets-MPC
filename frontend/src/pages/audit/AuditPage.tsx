@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react'
-import toast from 'react-hot-toast'
 import { getAuditoria } from '../../api/auditApi'
 import Card, { CardBody } from '../../components/ui/Card'
 import Table, { TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table'
@@ -7,6 +6,7 @@ import Badge from '../../components/ui/Badge'
 import SearchInput from '../../components/ui/SearchInput'
 import Loading from '../../components/ui/Loading'
 import Pagination from '../../components/ui/Pagination'
+import LoadError from '../../components/ui/LoadError'
 import { formatDateTime } from '../../utils/formatters'
 
 const accionLabels: Record<string, string> = {
@@ -59,6 +59,7 @@ export default function AuditPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [loadError, setLoadError] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -68,7 +69,8 @@ export default function AuditPage() {
       const res = await getAuditoria(params)
       setAuditorias(res.data.data || [])
       setTotalPages(res.data.last_page || 1)
-    } catch { toast.error('Error al cargar auditoría') }
+      setLoadError(false)
+    } catch { setLoadError(true) }
     finally { setLoading(false) }
   }, [page, search])
 
@@ -94,7 +96,9 @@ export default function AuditPage() {
         </CardBody>
       </Card>
 
-      {loading ? <Loading /> : (
+      {loading ? <Loading /> : loadError ? (
+        <Card><LoadError message="No se pudo cargar la auditoría." onRetry={loadData} /></Card>
+      ) : (
         <Card>
           <Table>
             <TableHeader>

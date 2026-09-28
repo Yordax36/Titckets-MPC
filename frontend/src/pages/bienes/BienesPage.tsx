@@ -13,7 +13,8 @@ import { getSedes } from '../../api/sedesApi';
 import usePermission from '../../hooks/usePermission';
 import { PERMISOS } from '../../utils/permissions';
 import { exportCsv } from '../../utils/exportCsv';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
+import LoadError from '../../components/ui/LoadError';
 
 /* ─── Config ─── */
 
@@ -70,6 +71,7 @@ export default function BienesPage() {
   const [loadingArea, setLoadingArea] = useState<number | null>(null);
 
   const [drawerBien, setDrawerBien] = useState<Bien | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const handleSearch = (val: string) => {
     setSearch(val);
@@ -107,8 +109,9 @@ export default function BienesPage() {
       setStats((statsRes.data ?? statsRes) as BienStats);
       setTipos((tiposRes.data ?? tiposRes) as TipoBien[]);
       setSedes(((sedesRes.data as any)?.data ?? (sedesRes.data as any) ?? []) as { id: number; nombre: string }[]);
+      setLoadError(false);
     } catch {
-      toast.error('Error al cargar datos');
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -253,6 +256,10 @@ export default function BienesPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          </div>
+        ) : loadError ? (
+          <div className="bg-white rounded-2xl border border-gray-100">
+            <LoadError message="No se pudieron cargar los bienes." onRetry={loadData} />
           </div>
         ) : areas.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">

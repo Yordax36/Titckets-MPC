@@ -13,7 +13,7 @@ export default function PermissionRoute({ permission }: PermissionRouteProps) {
   if (isLoading) return null
 
   if (!hasPermission(permission)) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/403" replace />
   }
 
   return <Outlet />

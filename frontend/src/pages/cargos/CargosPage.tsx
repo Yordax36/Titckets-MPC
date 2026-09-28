@@ -3,8 +3,9 @@ import { Briefcase, Plus, Pencil, Search, Loader2 } from 'lucide-react';
 import type { Cargo } from '../../api/cargoApi';
 import { getCargos, createCargo, updateCargo } from '../../api/cargoApi';
 import Modal from '../../components/ui/Modal';
-import toast from 'react-hot-toast';
-import { getErrorMessage } from '../../api/axios';
+import toast from '../../utils/notify';
+import { getErrorMessage, getValidationErrors } from '../../api/axios';
+import LoadError from '../../components/ui/LoadError';
 
 export default function CargosPage() {
   const [cargos, setCargos] = useState<Cargo[]>([]);
@@ -15,6 +16,8 @@ export default function CargosPage() {
   const [editingCargo, setEditingCargo] = useState<Cargo | null>(null);
   const [form, setForm] = useState({ nombre: '', descripcion: '' });
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null);
 
   useEffect(() => { loadCargos(); }, [search, filterEstado]);
 
@@ -26,25 +29,29 @@ export default function CargosPage() {
       if (filterEstado) params.estado = filterEstado;
       const res = await getCargos(params);
       setCargos(res.data);
-    } catch (e) { toast.error(getErrorMessage(e)); }
+      setLoadError(false);
+    } catch { setLoadError(true); }
     finally { setLoading(false); }
   };
 
   const openCreate = () => {
     setEditingCargo(null);
     setForm({ nombre: '', descripcion: '' });
+    setFieldErrors(null);
     setModalOpen(true);
   };
 
   const openEdit = (cargo: Cargo) => {
     setEditingCargo(cargo);
     setForm({ nombre: cargo.nombre, descripcion: cargo.descripcion || '' });
+    setFieldErrors(null);
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.nombre.trim()) { toast.error('El nombre es obligatorio'); return; }
     setSaving(true);
+    setFieldErrors(null);
     try {
       if (editingCargo) {
         await updateCargo(editingCargo.id, form);
@@ -56,7 +63,9 @@ export default function CargosPage() {
       setModalOpen(false);
       loadCargos();
     } catch (e) {
-      toast.error(getErrorMessage(e));
+      const errors = getValidationErrors(e);
+      setFieldErrors(errors);
+      if (!errors) toast.error(getErrorMessage(e));
     } finally { setSaving(false); }
   };
 
@@ -96,6 +105,8 @@ export default function CargosPage() {
 
         {loading ? (
           <div className="py-12 text-center"><Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" /></div>
+        ) : loadError ? (
+          <LoadError message="No se pudieron cargar los cargos." onRetry={loadCargos} />
         ) : cargos.length === 0 ? (
           <div className="py-12 text-center text-gray-400">
             <Briefcase className="h-10 w-10 mx-auto mb-2 text-gray-300" />
@@ -149,9 +160,10 @@ export default function CargosPage() {
         <div className="space-y-4 p-1">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del cargo <span className="text-red-500">*</span></label>
-            <input type="text" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })}
+            <input type="text" value={form.nombre} onChange={e => { setForm({ ...form, nombre: e.target.value }); if (fieldErrors) setFieldErrors(null); }}
               placeholder="Ej: Alcalde, Gerente, Jefe..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:border-transparent ${fieldErrors?.nombre ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+            {fieldErrors?.nombre && <p className="mt-1 text-sm text-red-600">{fieldErrors.nombre}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (opcional)</label>

@@ -1,22 +1,20 @@
 import axios from 'axios'
+import { friendlyMessage, getValidationErrors, getRequestId } from './errors'
 
 const api = axios.create({
   baseURL: '/api/v1',
+  timeout: 30000,
 })
 
+/**
+ * Mensaje amigable centralizado para errores de API, red y timeout.
+ * Todos los módulos deben usar este helper (§4 del estándar de errores).
+ */
 export function getErrorMessage(err: unknown): string {
-  const data = (err as any)?.response?.data
-  if (!data) return 'Error de conexión'
-
-  if (data.message && data.errors) {
-    const firstError = Object.values(data.errors)[0]
-    return Array.isArray(firstError) ? firstError[0] : String(firstError)
-  }
-  if (data.message) return data.message
-  if (data.error) return data.error
-
-  return 'Error inesperado'
+  return friendlyMessage(err)
 }
+
+export { getValidationErrors, getRequestId }
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
@@ -29,11 +27,30 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+    const status = error?.response?.status
+    const isLoginRequest = Boolean(error?.config?.url?.includes('/auth/login'))
+
+    // Sesión inválida o expirada: limpiar token y volver al login (§8)
+    if (status === 401 && !isLoginRequest) {
       localStorage.removeItem('token')
       sessionStorage.removeItem('token')
-      window.location.href = '/login'
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?e=401'
+        return Promise.reject(error)
+      }
     }
+
+    // Diagnóstico técnico solo en desarrollo (nunca en producción)
+    if (import.meta.env.DEV && status >= 500) {
+      console.error('[api]', {
+        method: error?.config?.method,
+        url: error?.config?.url,
+        status,
+        error_code: error?.response?.data?.error_code,
+        request_id: error?.response?.data?.request_id,
+      })
+    }
+
     return Promise.reject(error)
   }
 )

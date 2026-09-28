@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Ticket, Eye, EyeOff, Mail, Lock, Info, X } from 'lucide-react'
-import toast from 'react-hot-toast'
-import { getErrorMessage } from '../../api/axios'
+import toast from '../../utils/notify'
+import { getErrorMessage, getValidationErrors } from '../../api/axios'
 import { login } from '../../api/authApi'
 import useAuth from '../../hooks/useAuth'
 import { useSettings } from '../../hooks/useSettings'
@@ -15,13 +15,23 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showForgotModal, setShowForgotModal] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null)
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const auth = useAuth()
   const { logo, system_name } = useSettings()
+
+  useEffect(() => {
+    if (searchParams.get('e') === '401') {
+      toast.info('Tu sesión ha expirado. Inicia sesión nuevamente.')
+      setSearchParams({}, { replace: true })
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setFieldErrors(null)
     try {
       const response = await login(email, password)
       const token = response.data.token
@@ -29,7 +39,9 @@ export default function LoginPage() {
       toast.success('Bienvenido')
       navigate('/')
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      const errors = getValidationErrors(err)
+      setFieldErrors(errors)
+      if (!errors) toast.error(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -61,12 +73,15 @@ export default function LoginPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); if (fieldErrors) setFieldErrors(null) }}
                   placeholder="otica@municaasma.gob.pe"
                   required
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                  className={`w-full rounded-xl border bg-gray-50 py-2.5 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${fieldErrors?.email ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:border-green-500 focus:ring-green-500/20'}`}
                 />
               </div>
+              {fieldErrors?.email && (
+                <p className="mt-1.5 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -78,10 +93,10 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); if (fieldErrors) setFieldErrors(null) }}
                   placeholder="••••••••"
                   required
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-11 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                  className={`w-full rounded-xl border bg-gray-50 py-2.5 pl-11 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${fieldErrors?.password ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:border-green-500 focus:ring-green-500/20'}`}
                 />
                 <button
                   type="button"
@@ -91,6 +106,9 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {fieldErrors?.password && (
+                <p className="mt-1.5 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">

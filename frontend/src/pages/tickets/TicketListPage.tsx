@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState, useCallback } from 'react'
-import toast from 'react-hot-toast'
-import { getErrorMessage } from '../../api/axios'
+import toast from '../../utils/notify'
+import { getErrorMessage, getValidationErrors } from '../../api/axios'
 import {
   Plus, Search, X, RefreshCw, Download,
   ChevronUp, ChevronDown, FileText, Filter,
@@ -15,6 +15,7 @@ import Pagination from '../../components/ui/Pagination'
 import Select from '../../components/ui/Select'
 
 import SkeletonTable from '../../components/ui/SkeletonTable'
+import LoadError from '../../components/ui/LoadError'
 import TicketDrawer from '../../components/tickets/TicketDrawer'
 import CreateTicketModal from '../../components/tickets/CreateTicketModal'
 import RowActions from '../../components/tickets/RowActions'
@@ -59,6 +60,7 @@ export default function TicketListPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [_creating, setCreating] = useState(false)
   const [areas, setAreas] = useState<any[]>([])
+  const [loadError, setLoadError] = useState(false)
 
   // Detail drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -83,8 +85,9 @@ export default function TicketListPage() {
       setTickets(ticketsRes.data.data || [])
       setTotalPages(ticketsRes.data.last_page || 1)
       setTotalRecords(ticketsRes.data.total || 0)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
+      setLoadError(false)
+    } catch {
+      setLoadError(true)
     } finally { setLoading(false) }
   }, [page, perPage, sortField, sortDir, search, estado, categoria, asignadoA, areaId, fechaDesde, fechaHasta])
 
@@ -162,7 +165,9 @@ export default function TicketListPage() {
       setShowCreate(false)
       loadData()
     } catch (err) {
-      toast.error(getErrorMessage(err))
+      const errors = getValidationErrors(err)
+      if (!errors) toast.error(getErrorMessage(err))
+      throw err
     } finally {
       setCreating(false)
     }
@@ -253,6 +258,10 @@ export default function TicketListPage() {
       {/* Table */}
       {loading ? (
         <SkeletonTable rows={5} cols={7} />
+      ) : loadError ? (
+        <Card>
+          <LoadError message="No se pudieron cargar los tickets." onRetry={loadData} />
+        </Card>
       ) : tickets.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center justify-center py-16">

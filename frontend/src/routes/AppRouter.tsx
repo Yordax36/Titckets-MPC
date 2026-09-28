@@ -21,6 +21,7 @@ import AuditPage from '../pages/audit/AuditPage'
 import ConfiguracionPage from '../pages/configuracion/ConfiguracionPage'
 import PerfilAreaPage from '../pages/perfil-area/PerfilAreaPage'
 import NotFoundPage from '../pages/NotFoundPage'
+import ErrorPage from '../pages/errors/ErrorPage'
 import useAuth from '../hooks/useAuth'
 
 export default function AppRouter() {
@@ -35,6 +36,18 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Páginas de error HTTP (§17) */}
+      <Route path="/401" element={<ErrorPage status={401} />} />
+      <Route path="/403" element={<ErrorPage status={403} />} />
+      <Route path="/419" element={<ErrorPage status={419} />} />
+      <Route path="/422" element={<ErrorPage status={422} />} />
+      <Route path="/429" element={<ErrorPage status={429} />} />
+      <Route path="/500" element={<ErrorPage status={500} />} />
+      <Route path="/502" element={<ErrorPage status={502} />} />
+      <Route path="/503" element={<ErrorPage status={503} />} />
+      <Route path="/504" element={<ErrorPage status={504} />} />
+      <Route path="/404" element={<ErrorPage status={404} />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>

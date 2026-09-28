@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Users, Plus, Pencil, Trash2, Search, Eye, Shield, Loader2, Camera, X, User, Upload, Calendar } from 'lucide-react';
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../../api/usuarioApi';
-import api, { getErrorMessage } from '../../api/axios';
+import api, { getErrorMessage, getValidationErrors } from '../../api/axios';
 import Modal from '../../components/ui/Modal';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import DatePicker from '../../components/ui/DatePicker';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
+import LoadError from '../../components/ui/LoadError';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -66,6 +67,8 @@ export default function UsuarioListPage() {
   const [fotoRemoved, setFotoRemoved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loadingDni, setLoadingDni] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const lookupDni = async (dni: string) => {
@@ -93,8 +96,9 @@ export default function UsuarioListPage() {
       if (filterEstado) params.estado = filterEstado;
       const res = await getUsuarios(params);
       setUsuarios(res.data.data);
-    } catch (e) {
-      toast.error(getErrorMessage(e));
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -112,6 +116,7 @@ export default function UsuarioListPage() {
     setFotoFile(null);
     setFotoPreview(null);
     setFotoRemoved(false);
+    setFieldErrors(null);
   };
 
   const openCreate = () => {
@@ -135,6 +140,7 @@ export default function UsuarioListPage() {
     setFotoFile(null);
     setFotoPreview(user.foto ? `${API_URL}/${user.foto}` : null);
     setFotoRemoved(false);
+    setFieldErrors(null);
     setModalOpen(true);
   };
 
@@ -189,6 +195,7 @@ export default function UsuarioListPage() {
     }
 
     setSaving(true);
+    setFieldErrors(null);
     try {
       const fd = new FormData();
       fd.append('nombres', form.nombres);
@@ -218,7 +225,9 @@ export default function UsuarioListPage() {
       resetForm();
       loadUsuarios();
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      const errors = getValidationErrors(err);
+      setFieldErrors(errors);
+      if (!errors) toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -288,6 +297,8 @@ export default function UsuarioListPage() {
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500">Cargando...</td></tr>
+            ) : loadError ? (
+              <tr><td colSpan={6} className="p-0"><LoadError message="No se pudieron cargar las personas." onRetry={loadUsuarios} /></td></tr>
             ) : usuarios.length === 0 ? (
               <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500">No se encontraron personas</td></tr>
             ) : (
@@ -377,6 +388,7 @@ export default function UsuarioListPage() {
                   Subir imagen
                 </button>
                 <p className="text-xs text-gray-400 text-center">JPG, PNG. Max. 2MB</p>
+                {fieldErrors?.foto && <p className="mt-1 text-xs text-red-600 text-center">{fieldErrors.foto}</p>}
               </div>
             </div>
 
@@ -389,11 +401,13 @@ export default function UsuarioListPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nombres <span className="text-red-500">*</span></label>
-                    <input type="text" value={form.nombres} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[0-9]/g, ''); setForm({ ...form, nombres: e.currentTarget.value }) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ingresa los nombres" required />
+                    <input type="text" value={form.nombres} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[0-9]/g, ''); setForm({ ...form, nombres: e.currentTarget.value }); if (fieldErrors) setFieldErrors(null); }} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${fieldErrors?.nombres ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} placeholder="Ingresa los nombres" required />
+                    {fieldErrors?.nombres && <p className="mt-1 text-sm text-red-600">{fieldErrors.nombres}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos <span className="text-red-500">*</span></label>
-                    <input type="text" value={form.apellidos} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[0-9]/g, ''); setForm({ ...form, apellidos: e.currentTarget.value }) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ingresa los apellidos" required />
+                    <input type="text" value={form.apellidos} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[0-9]/g, ''); setForm({ ...form, apellidos: e.currentTarget.value }); if (fieldErrors) setFieldErrors(null); }} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${fieldErrors?.apellidos ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} placeholder="Ingresa los apellidos" required />
+                    {fieldErrors?.apellidos && <p className="mt-1 text-sm text-red-600">{fieldErrors.apellidos}</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -436,9 +450,10 @@ export default function UsuarioListPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de ingreso <span className="text-red-500">*</span></label>
                   <DatePicker
                     value={form.fecha_ingreso}
-                    onChange={(date) => setForm({ ...form, fecha_ingreso: date })}
+                    onChange={(date) => { setForm({ ...form, fecha_ingreso: date }); if (fieldErrors) setFieldErrors(null); }}
                     required
                   />
+                  {fieldErrors?.fecha_ingreso && <p className="mt-1 text-sm text-red-600">{fieldErrors.fecha_ingreso}</p>}
                 </div>
                 <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                   <div>

@@ -11,8 +11,8 @@ import type { TipoBien, BienStats } from '../../api/bienApi';
 import { createBien, updateBien, getBien, getTiposBienes, getBienStats } from '../../api/bienApi';
 import { getAreas } from '../../api/areaApi';
 import { getSedes } from '../../api/sedesApi';
-import toast from 'react-hot-toast';
-import { getErrorMessage } from '../../api/axios';
+import toast from '../../utils/notify';
+import { getErrorMessage, getValidationErrors } from '../../api/axios';
 
 /* ─── Icons & Config ─── */
 
@@ -374,6 +374,7 @@ export default function RegistrarBienPage() {
   const [saving, setSaving] = useState(false);
   const [areaSearch, setAreaSearch] = useState('');
   const [slideDir, setSlideDir] = useState<'next' | 'back'>('next');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -449,16 +450,19 @@ export default function RegistrarBienPage() {
       if (mac && !validateMAC(mac)) { toast.error('Formato de MAC inválido (ej: AA:BB:CC:DD:EE:FF)'); return; }
     }
     setSlideDir('next');
+    setFieldErrors(null);
     setStep(s => Math.min(s + 1, STEPS.length - 1));
   };
 
   const goBack = () => {
     setSlideDir('back');
+    setFieldErrors(null);
     setStep(s => Math.max(s - 1, 0));
   };
 
   const handleSave = async () => {
     setSaving(true);
+    setFieldErrors(null);
     try {
       const payload = {
         tipo_bien_id: form.tipo_bien_id,
@@ -482,7 +486,9 @@ export default function RegistrarBienPage() {
       }
       navigate('/bienes');
     } catch (e) {
-      toast.error(getErrorMessage(e));
+      const errors = getValidationErrors(e);
+      setFieldErrors(errors);
+      if (!errors) toast.error(getErrorMessage(e));
     } finally { setSaving(false); }
   };
 
@@ -860,6 +866,18 @@ export default function RegistrarBienPage() {
               )}
             </div>
           </div>
+
+          {/* Validation errors summary */}
+          {fieldErrors && Object.keys(fieldErrors).length > 0 && (
+            <div className="mx-8 mb-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+              <p className="text-sm font-semibold text-red-700 mb-1">Revisa los siguientes datos:</p>
+              <ul className="list-disc pl-5 space-y-0.5">
+                {Array.from(new Set(Object.values(fieldErrors))).map((msg, i) => (
+                  <li key={i} className="text-sm text-red-600">{msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Bottom navigation */}
           <div className="bg-white border-t border-gray-200 px-8 py-4 flex items-center justify-between">

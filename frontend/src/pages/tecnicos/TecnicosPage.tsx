@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import toast from 'react-hot-toast'
+import toast from '../../utils/notify'
 import { getErrorMessage } from '../../api/axios'
 import {
   Search, Plus, Pencil, Trash2, Eye, EyeOff,
@@ -16,6 +16,7 @@ import Modal from '../../components/ui/Modal'
 import Tooltip from '../../components/ui/Tooltip'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 import SkeletonTable from '../../components/ui/SkeletonTable'
+import LoadError from '../../components/ui/LoadError'
 import { formatDateTime, formatTimeAgo } from '../../utils/formatters'
 
 type SortField = 'codigo' | 'alias' | 'nombres' | 'email' | 'tickets_activos_count' | 'estado'
@@ -58,6 +59,7 @@ export default function TecnicosPage() {
   const [resetPasswordId, setResetPasswordId] = useState<number | null>(null)
   const [newPassword, setNewPassword] = useState('')
   const [resettingPassword, setResettingPassword] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -68,8 +70,9 @@ export default function TecnicosPage() {
       ])
       setTecnicos(tecnicosRes.data?.data || [])
       setStats(statsRes.data)
+      setLoadError(false)
     } catch {
-      toast.error('Error al cargar técnicos')
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
@@ -335,6 +338,10 @@ export default function TecnicosPage() {
       {/* Table */}
       {loading ? (
         <SkeletonTable rows={5} cols={6} />
+      ) : loadError ? (
+        <Card>
+          <LoadError message="No se pudieron cargar los técnicos." onRetry={loadData} />
+        </Card>
       ) : filteredTecnicos.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center justify-center py-16">

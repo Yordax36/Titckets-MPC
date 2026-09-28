@@ -6,8 +6,8 @@ import {
 import Modal from '../ui/Modal'
 import { CATEGORIAS_NUEVAS, type CategoriaIncidencia } from '../../utils/constants'
 import { getAreas } from '../../api/areaApi'
-import toast from 'react-hot-toast'
-import { getErrorMessage } from '../../api/axios'
+import toast from '../../utils/notify'
+import { getErrorMessage, getValidationErrors } from '../../api/axios'
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
   Monitor, Printer, Wifi, Mail, Shield, Layout, Phone, MoreHorizontal,
@@ -48,6 +48,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null)
   const [areasLoading, setAreasLoading] = useState(false)
   const [areasSearch, setAreasSearch] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null)
 
   const needsAreaSelection = canSelectArea
 
@@ -85,6 +86,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
     setSubmitting(false)
     setSelectedAreaId(isAreaUser && userAreaId ? userAreaId : null)
     setAreasSearch('')
+    setFieldErrors(null)
   }
 
   const handleClose = () => {
@@ -178,6 +180,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
     const incidencia = getIncidenciaFinal()!
     const titulo = `${selectedCategoria!.label} - ${incidencia}`
     setSubmitting(true)
+    setFieldErrors(null)
     try {
       await onSubmit({
         titulo,
@@ -188,7 +191,8 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
         files,
       })
       reset()
-    } catch {
+    } catch (err) {
+      setFieldErrors(getValidationErrors(err))
       setSubmitting(false)
     }
   }
@@ -353,6 +357,10 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
               )}
             </div>
 
+            {fieldErrors?.area_id && (
+              <p className="text-sm text-red-600">{fieldErrors.area_id}</p>
+            )}
+
             {selectedAreaId && (
               <div className="flex justify-end">
                 <button
@@ -457,11 +465,14 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
               </label>
               <textarea
                 value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
+                onChange={(e) => { setDescripcion(e.target.value); if (fieldErrors) setFieldErrors(null); }}
                 rows={4}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className={`w-full rounded-xl border bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${fieldErrors?.descripcion ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500/20'}`}
                 placeholder="Describa brevemente el problema o agregue información que ayude al técnico a comprender la incidencia."
               />
+              {fieldErrors?.descripcion && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.descripcion}</p>
+              )}
             </div>
 
             {/* File Upload */}
@@ -493,7 +504,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSubmit, canSelect
                   Arrastre archivos aquí o haga clic para seleccionarlos
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  JPG, PNG, PDF, DOC — Máximo 10 MB por archivo
+                  JPG, PNG, WEBP — Máximo 5 MB por archivo (hasta 5 archivos)
                 </p>
               </div>
 

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import type { Bien, Mantenimiento, BienHistorial } from '../../api/bienApi';
 import { getBien, getBienHistorial, getMantenimientos, createMantenimiento, cambiarEstadoBien, deleteBien } from '../../api/bienApi';
-import toast from 'react-hot-toast';
+import toast from '../../utils/notify';
 import { getErrorMessage } from '../../api/axios';
 import usePermission from '../../hooks/usePermission';
 import { PERMISOS } from '../../utils/permissions';

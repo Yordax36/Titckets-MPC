@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Ticket, Clock, CheckCircle, AlertCircle } from 'lucide-react'
-import toast from 'react-hot-toast'
+import toast from '../../utils/notify'
 import { getEstadisticas, getTicketsRecientes } from '../../api/dashboardApi'
 import Card, { CardBody } from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'

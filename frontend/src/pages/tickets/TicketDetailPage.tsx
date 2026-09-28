@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '../../utils/notify'
 import { getErrorMessage } from '../../api/axios'
 import { getTicket, cambiarEstado, asignarTecnico, historial } from '../../api/ticketApi'
 import { getRespuestas } from '../../api/respuestaApi'

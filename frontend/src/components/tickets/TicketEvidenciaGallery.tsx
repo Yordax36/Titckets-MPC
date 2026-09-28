@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { Camera, Upload, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { uploadEvidencia, deleteEvidencia } from '../../api/ticketApi'
 import { formatFileSize } from '../../utils/formatters'
-import toast from 'react-hot-toast'
+import toast from '../../utils/notify'
 import { getErrorMessage } from '../../api/axios'
 import Modal from '../ui/Modal'
 

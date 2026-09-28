@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import toast from 'react-hot-toast'
-import api from '../../api/axios'
+import toast from '../../utils/notify'
+import api, { getErrorMessage } from '../../api/axios'
 import { getTicket, cambiarEstado, asignarTecnico, historial, uploadEvidencia, deleteEvidencia } from '../../api/ticketApi'
 import { getRespuestas, createRespuesta } from '../../api/respuestaApi'
 import { getAllTecnicos } from '../../api/tecnicoApi'
@@ -89,20 +89,20 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
       } else {
         setTecnicos([])
       }
-    } catch { toast.error('Error al cargar ticket') }
+    } catch (err) { toast.error(getErrorMessage(err)) }
     finally { setLoading(false) }
   }
 
   const handleCambiarEstado = async (nuevoEstado: string) => {
     if (!ticket) return
     try { await cambiarEstado(ticket.id, nuevoEstado); toast.success('Estado actualizado'); loadTicket(); onRefresh?.(); setShowEstado(false) }
-    catch { toast.error('Error al cambiar estado') }
+    catch (err) { toast.error(getErrorMessage(err)) }
   }
 
   const handleAsignar = async (tecnicoId: string) => {
     if (!ticket) return
     try { await asignarTecnico(ticket.id, Number(tecnicoId)); toast.success('Técnico asignado'); loadTicket(); onRefresh?.(); setShowAsignar(false) }
-    catch { toast.error('Error al asignar técnico') }
+    catch (err) { toast.error(getErrorMessage(err)) }
   }
 
   const downloadPdf = async () => {
@@ -117,8 +117,8 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
       link.click()
       link.remove()
       window.URL.revokeObjectURL(url)
-    } catch {
-      toast.error('Error al descargar PDF')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
     }
   }
 
@@ -132,7 +132,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
       toast.success('Comentario enviado')
       const res = await getRespuestas(ticket.id)
       setRespuestas(res.data || [])
-    } catch { toast.error('Error al enviar comentario') }
+    } catch (err) { toast.error(getErrorMessage(err)) }
     finally { setSendingComment(false) }
   }
 
@@ -146,7 +146,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
       await uploadEvidencia(ticket.id, formData)
       toast.success('Archivo subido')
       loadTicket()
-    } catch { toast.error('Error al subir archivo') }
+    } catch (err) { toast.error(getErrorMessage(err)) }
     finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = '' }
   }
 
@@ -157,7 +157,7 @@ export default function TicketDrawer({ isOpen, onClose, ticketId, currentUserId,
       await deleteEvidencia(ticket.id, id)
       toast.success('Archivo eliminado')
       loadTicket()
-    } catch { toast.error('Error al eliminar') }
+    } catch (err) { toast.error(getErrorMessage(err)) }
     finally { setDeleting(null) }
   }
 

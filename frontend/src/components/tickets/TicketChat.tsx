@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
 import { formatDateTime } from '../../utils/formatters'
-import toast from 'react-hot-toast'
+import toast from '../../utils/notify'
+import { getErrorMessage } from '../../api/axios'
 import { createRespuesta } from '../../api/respuestaApi'
 
 interface Message {
@@ -30,8 +31,8 @@ export default function TicketChat({ ticketId, respuestas, currentUserId, onRefr
       await createRespuesta(ticketId, { respuesta: newMessage })
       setNewMessage('')
       onRefresh()
-    } catch {
-      toast.error('Error al enviar mensaje')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
     } finally {
       setSending(false)
     }
